@@ -1,10 +1,11 @@
 import os
 
 from flask import (Flask, redirect, render_template, request,
-                   send_from_directory, url_for)
+                   send_from_directory, url_for, jsonify)
 
 app = Flask(__name__)
 
+serverStorageCount = 0
 
 @app.route('/')
 def index():
@@ -26,7 +27,15 @@ def hello():
    else:
        print('Request for hello page received with no name or blank name -- redirecting')
        return redirect(url_for('index'))
+   
+
+# My methods:
+@app.route('/addcount')
+def addCount():
+    global serverStorageCount
+    serverStorageCount += 1
+    return jsonify({"count": serverStorageCount})
 
 
 if __name__ == '__main__':
-   app.run()
+    app.run()
