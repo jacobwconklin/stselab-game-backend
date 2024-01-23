@@ -1,11 +1,15 @@
 import os
 
 from flask import (Flask, redirect, render_template, request,
-                   send_from_directory, url_for, jsonify)
+                   send_from_directory, url_for, jsonify, json)
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
+# Temporary global variables before database is connected
 serverStorageCount = 0
+users = []
 
 @app.route('/')
 def index():
@@ -35,6 +39,43 @@ def addCount():
     global serverStorageCount
     serverStorageCount += 1
     return jsonify({"count": serverStorageCount})
+
+
+
+# STSELab Demo Methods:
+@app.route('/submitform', methods=['POST'])
+def submitform():
+    try:
+        data = request.json
+        firstName = data.get('firstName')
+        lastName = data.get('lastName')
+        num = data.get('num')
+        birthDate = data.get('birthDate')
+        pet = data.get('pet')
+        color = data.get('color')
+        global users
+        newUser = {"id": len(users) + 1, "firstName": firstName, "lastName": lastName, "num": num, "birthDate": birthDate, "pet": pet, "color": color}
+        users.append(newUser)
+        return jsonify({"success": True, "user": newUser})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": e})
+    
+@app.route('/allusers')
+def allusers():
+    global users
+    return jsonify({"users": users})
+
+@app.route('/resetusers')
+def resetusers():
+    global users
+    users = []
+    return jsonify({"success": True})
+
+
+
+
+
 
 
 if __name__ == '__main__':
