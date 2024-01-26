@@ -1,4 +1,7 @@
 import os
+import pyodbc as odbc
+from dotenv import load_dotenv
+load_dotenv()
 
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
@@ -41,7 +44,6 @@ def addCount():
     return jsonify({"count": serverStorageCount})
 
 
-
 # STSELab Demo Methods:
 @app.route('/submitform', methods=['POST'])
 def submitform():
@@ -72,9 +74,20 @@ def resetusers():
     users = []
     return jsonify({"success": True})
 
+@app.route('/testdb')
+def testdb():
+    connection_string = os.getenv('AZURE_SQL_CONNECTIONSTRING')
+    conn = odbc.connect(connection_string)
+    cursor = conn.cursor()
+    # cursor.execute(f"INSERT INTO Persons (FirstName, LastName) VALUES (?, ?)", "lim", "Kob")
+    # conn.commit()
 
-
-
+    totalString = "people are: "
+    cursor.execute("SELECT * FROM Persons")
+    for row in cursor.fetchall():
+        print(row.FirstName, row.LastName)
+        totalString += row.FirstName + " " + row.LastName + ", "
+    return jsonify({"people": totalString})
 
 
 
