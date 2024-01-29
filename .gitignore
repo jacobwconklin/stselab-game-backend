@@ -1,3 +1,6 @@
+# Secrets that do need to be deployed
+environmentSecrets.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
