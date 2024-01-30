@@ -1,6 +1,7 @@
 import os
 import pyodbc 
 import random
+import uuid
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime
@@ -84,9 +85,9 @@ def testdb():
         # Create connection to SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
         cursor = conn.cursor()
-        totalString = "people are: "
+        totalString = "players are: "
         # Execute SQL query and build result
-        cursor.execute("SELECT * FROM TestUsers")
+        cursor.execute("SELECT * FROM Player")
         for row in cursor.fetchall():
             totalString += row.FirstName + " " + row.color + ", "
         return jsonify({"people": totalString})
@@ -121,9 +122,57 @@ def testdb():
     # get aggregate scores for all sessions (for all)
     # get aggregate scores for for a player (for all) ? Maybe not needed and not sure exactly what it would look like
 
+# REST API Endpoints:
+    
+# Status a session, includes retreiving all players in a session and all scores for each player
+# This will be called repeatedly by polling front-end, and so switching to websockets would reduce the work
+# needed to be done by the server.
+# TODO even if I do keep polling, I could break this down into getting session, getting all players, and getting scores, so that
+# only the work of checking session round has to be done constantly. 
+@app.route('/session/status', methods=['POST'])
+def sessionStatus():
+    try:
+        # First check that required data is in request, must have valid sessionId
+        data = request.json
+        sessionId = data.get('sessionId')
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Save information about session itself
+        cursor.execute(f"SELECT * FROM Session WHERE JoinCode = ?", (str(sessionId)))
+        session = cursor.fetchone()
+        if session is None:
+            return jsonify({"error": "Session not found"})
+
+        # Check that players exist with matching sessionId
+        cursor.execute(f"SELECT * FROM Player WHERE SessionId = ?", (str(sessionId)))
+        players = cursor.fetchall()
+        if not players:
+            return jsonify({"error": "Players not found"})
+        
+        # Save array of all players in the session
+        playerList = []
+        for player in players:
+            print(player.FirstName)
+            playerList.append({"firstName": player.FirstName, "color": player.Color, "scores": []})
+            # For each player, also save their scores
+            cursor.execute(f"SELECT * FROM RoundResult WHERE PlayerId = ?", (str(player.Id)))
+            scores = cursor.fetchall()
+            if scores:
+                for score in scores:
+                    playerList[-1]["scores"].append({"shots": score.Shots, "cost": score.Cost, "round": score.Round})
+
+        return jsonify({"success": True, "players": playerList, 
+                        "session": {"startDate": session.StartDate, "endDate": session.EndDate, "round": session.Round}})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)}) 
+
 # Begins a new game by a host, creating a session. Will need all of the information collected for each player, without
 # a join code. Must return if successful or not, and if successful, the join code for the session.
-@app.route('/host', methods=['POST'])
+@app.route('/player/host', methods=['POST'])
 def host():
     try:
         # TODO decide on exact data wanted for each player
@@ -132,31 +181,43 @@ def host():
         firstName = data.get('firstName')
         color = data.get('color')
 
-        # Now generate a join code and create a new session in the database
-        joinCode = random.randint(100000, 999999)
-        # TODO check join code doesn't already exist in database
-
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
         cursor = conn.cursor()
 
+        # Now generate a join code and create a new session in the database
+        joinCode = random.randint(100000, 999999)
+        # check join code doesn't already exist in database
+        newCode = False
+        while not newCode:
+            cursor.execute(f"SELECT * FROM Session WHERE JoinCode = ?", (str(joinCode)))
+            if cursor.fetchone() is None:
+                newCode = True
+            else:
+                joinCode = random.randint(100000, 999999)
+
+        print("New join code: " + str(joinCode))
         # Insert new session into database
-        cursor.execute(f"SET IDENTITY_INSERT Session ON INSERT INTO Session (joinCode, startDate, endDate) VALUES (?, ?, ?)",
-            (str(joinCode), datetime.today().strftime('%Y-%m-%d'), 'None'))
+        cursor.execute(f"INSERT INTO Session (JoinCode, Round, StartDate, EndDate) VALUES (?, 0, ?, ?)",
+            (str(joinCode), datetime.today().strftime('%Y-%m-%d %H:%M:%S'), 'None'))
         conn.commit()
 
-        # Now create new user and insert them into the database
-        cursor.execute(f"INSERT INTO TestUsers (firstName, sessionId, color) VALUES (?, ?, ?)", (firstName, str(joinCode), color))  
+        # Generate UUID for player
+        playerId = uuid.uuid4()
+
+        # Now create new player and insert them into the database
+        cursor.execute(f"INSERT INTO Player (Id, FirstName, Color, SessionId) VALUES (?, ?, ?, ?)", 
+            (playerId, firstName, color, str(joinCode)))  
         conn.commit()
 
         # On success return success and join code
-        return jsonify({"success": True, "joinCode": joinCode})
+        return jsonify({"success": True, "joinCode": joinCode, "playerId": playerId})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
     
 # Joins a game creating a player for a given session IF that session exists
-@app.route('/join', methods=['POST'])
+@app.route('/player/join', methods=['POST'])
 def join():
     try:
         # TODO decide on exact data wanted for each player
@@ -171,13 +232,50 @@ def join():
         cursor = conn.cursor()
 
         # Check that session exists
-        cursor.execute(f"SELECT * FROM Session WHERE joinCode = ?", (str(joinCode)))
+        cursor.execute(f"SELECT * FROM Session WHERE JoinCode = ?", (str(joinCode)))
         session = cursor.fetchone()
         if session is None:
             return jsonify({"error": "Session not found"})
 
-        # Now create new user and insert them into the database
-        cursor.execute(f"INSERT INTO TestUsers (firstName, sessionId, color) VALUES (?, ?, ?)", (firstName, str(joinCode), color))  
+        # Generate UUID for player
+        playerId = uuid.uuid4()
+
+        # Now create new player and insert them into the database
+        cursor.execute(f"INSERT INTO Player (Id, FirstName, Color, SessionId) VALUES (?, ?, ?, ?)", 
+            (playerId, firstName, color, str(joinCode)))  
+        conn.commit()
+
+        return jsonify({"success": True, "playerId": playerId})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+
+# Joins a game creating a player for a given session IF that session exists
+@app.route('/player/result', methods=['POST'])
+def result():
+    try:
+        # Save player's results for a round in the tournament
+        # First check that required data is in request, must have valid Id for Player,
+        # as well as shot, cost, and round information
+        data = request.json
+        id = data.get('playerId')
+        shots = data.get('shots')
+        cost = data.get('cost')
+        round = data.get('round')
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Check that player exists
+        cursor.execute(f"SELECT * FROM Player WHERE Id = ?", (str(id)))
+        player = cursor.fetchone()
+        if player is None:
+            return jsonify({"error": "Player not found"})
+
+        # Now create new Round Result and insert into its table
+        cursor.execute(f"INSERT INTO RoundResult (PlayerId, Shots, Cost, Round) VALUES (?, ?, ?, ?)", 
+                       (str(id), str(shots), str(cost), str(round)))  
         conn.commit()
 
         return jsonify({"success": True})
@@ -185,33 +283,14 @@ def join():
         print(e)
         return jsonify({"error": str(e)})
 
-# Retreives all players in a given Session
-@app.route('/session/players', methods=['POST'])
-def sessionPlayers():
-    try:
-        # First check that required data is in request, must have valid sessionId
-        data = request.json
-        sessionId = data.get('sessionId')
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
-
-        # Check that players exist with matching sessionId
-        cursor.execute(f"SELECT * FROM TestUsers WHERE sessionId = ?", (str(sessionId)))
-        players = cursor.fetchall()
-        if not players:
-            return jsonify({"error": "Players not found"})
-        
-        playerList = []
-        for player in players:
-            print(player.firstName)
-            playerList.append({"id": player.id, "firstName": player.firstName, "color": player.color})
-
-        return jsonify({"success": True, "players": playerList})
-    except Exception as e:
-        print(e)
-        return jsonify({"error": str(e)}) 
+# TODO may switch to websocket connection for backend with https://flask-socketio.readthedocs.io/en/latest/
+# Websocket endpoints:
+# Using websockets allows server to send messages, so clients do not have to continually poll for updates.
+# The updates that the server may need to send are:
+    # A player has joined a session,
+    # A player has left a session,
+    # And the session status changing (starting, round changing, ending)
 
 
 if __name__ == '__main__':
