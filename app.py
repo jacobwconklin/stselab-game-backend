@@ -156,7 +156,7 @@ def sessionStatus():
         playerList = []
         for player in players:
             print(player.FirstName)
-            playerList.append({"firstName": player.FirstName, "color": player.Color, "scores": []})
+            playerList.append({"id": player.Id, "firstName": player.FirstName, "color": player.Color, "scores": []})
             # For each player, also save their scores
             cursor.execute(f"SELECT * FROM RoundResult WHERE PlayerId = ?", (str(player.Id)))
             scores = cursor.fetchall()
@@ -279,6 +279,34 @@ def result():
         conn.commit()
 
         return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+    
+
+# Moves session to the next round, only host can call this
+# Will update the round number, and the EndDate if the last round has been played
+@app.route('/session/advance', methods=['POST'])
+def advanceSession():
+    try:
+        # First check that required data is in request, must have valid sessionId
+        data = request.json
+        sessionId = data.get('sessionId')
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Ensure session exists
+        cursor.execute(f"SELECT * FROM Session WHERE JoinCode = ?", (str(sessionId)))
+        session = cursor.fetchone()
+        if session is None:
+            return jsonify({"error": "Session not found"})
+        
+        cursor.execute(f"UPDATE Session SET Round = ? WHERE JoinCode = ?", (str(session.Round + 1), str(sessionId)))
+        conn.commit()
+
+        return jsonify({"success": True, "round": session.Round + 1})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
