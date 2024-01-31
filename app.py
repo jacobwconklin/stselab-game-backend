@@ -39,42 +39,7 @@ def hello():
        print('Request for hello page received with no name or blank name -- redirecting')
        return redirect(url_for('index'))
    
-
-# STSELab Demo Methods:
-@app.route('/addcount')
-def addCount():
-    global serverStorageCount
-    serverStorageCount += 1
-    return jsonify({"count": serverStorageCount})
-
-@app.route('/submitform', methods=['POST'])
-def submitform():
-    try:
-        data = request.json
-        firstName = data.get('firstName')
-        lastName = data.get('lastName')
-        num = data.get('num')
-        birthDate = data.get('birthDate')
-        pet = data.get('pet')
-        color = data.get('color')
-        global users
-        newUser = {"id": len(users) + 1, "firstName": firstName, "lastName": lastName, "num": num, "birthDate": birthDate, "pet": pet, "color": color}
-        users.append(newUser)
-        return jsonify({"success": True, "user": newUser})
-    except Exception as e:
-        print(e)
-        return jsonify({"error": str(e)})
-    
-@app.route('/allusers')
-def allusers():
-    global users
-    return jsonify({"users": users})
-
-@app.route('/resetusers')
-def resetusers():
-    global users
-    users = []
-    return jsonify({"success": True})
+# Test routes, TODO should add health checks for monitoring and deployment purposes
 
 @app.route('/testdb')
 def testdb():
@@ -135,6 +100,7 @@ def sessionStatus():
         # First check that required data is in request, must have valid sessionId
         data = request.json
         sessionId = data.get('sessionId')
+        playerId = data.get('playerId')
 
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
@@ -145,6 +111,12 @@ def sessionStatus():
         session = cursor.fetchone()
         if session is None:
             return jsonify({"error": "Session not found"})
+        
+        # Checking that player is still in their current session (they may have been kicked by host)
+        cursor.execute(f"SELECT * FROM Player WHERE Id = ?", (str(playerId)))
+        player = cursor.fetchone()
+        if player and str(player.SessionId) != str(sessionId):
+            return jsonify({"error": "Player not in session"})
 
         # Check that players exist with matching sessionId
         cursor.execute(f"SELECT * FROM Player WHERE SessionId = ?", (str(sessionId)))
@@ -155,7 +127,6 @@ def sessionStatus():
         # Save array of all players in the session
         playerList = []
         for player in players:
-            print(player.FirstName)
             playerList.append({"id": player.Id, "firstName": player.FirstName, "color": player.Color, "scores": []})
             # For each player, also save their scores
             cursor.execute(f"SELECT * FROM RoundResult WHERE PlayerId = ?", (str(player.Id)))
@@ -196,7 +167,6 @@ def host():
             else:
                 joinCode = random.randint(100000, 999999)
 
-        print("New join code: " + str(joinCode))
         # Insert new session into database
         cursor.execute(f"INSERT INTO Session (JoinCode, Round, StartDate, EndDate) VALUES (?, 0, ?, ?)",
             (str(joinCode), datetime.today().strftime('%Y-%m-%d %H:%M:%S'), 'None'))
@@ -236,6 +206,10 @@ def join():
         session = cursor.fetchone()
         if session is None:
             return jsonify({"error": "Session not found"})
+        
+        # Check that session hasn't already started (Should still be on round 0)
+        if session.Round != 0:
+            return jsonify({"error": "Session has already started"})
 
         # Generate UUID for player
         playerId = uuid.uuid4()
@@ -246,6 +220,35 @@ def join():
         conn.commit()
 
         return jsonify({"success": True, "playerId": playerId})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+    
+# Removes a player from a session, called by the host to remove them or the player themselves to leave
+# TODO must decide if it should delete the player data from the database (and all reliant round results) 
+# or just change the session id to null. Will start with just changing session id so data remains in db
+# for aggregate results.
+@app.route('/player/remove', methods=['POST'])
+def remove():
+    try:
+        # First check that required data is in request, must have valid playerId
+        data = request.json
+        playerId = data.get('playerId')
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Ensure player exists
+        cursor.execute(f"SELECT * FROM Player WHERE Id = ?", (str(playerId)))
+        player = cursor.fetchone()
+        if player is None:
+            return jsonify({"error": "Player not found"})
+        
+        cursor.execute(f"UPDATE Player SET SessionId = Null WHERE Id = ?", str(playerId))
+        conn.commit()
+
+        return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
@@ -272,6 +275,8 @@ def result():
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
+        
+        print(f"SQL For saving result: INSERT INTO RoundResult (PlayerId, Shots, Cost, Round) VALUES (?, ?, ?, ?)", (str(id), str(shots), str(cost), str(round)))
 
         # Now create new Round Result and insert into its table
         cursor.execute(f"INSERT INTO RoundResult (PlayerId, Shots, Cost, Round) VALUES (?, ?, ?, ?)", 
