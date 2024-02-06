@@ -41,24 +41,49 @@ def hello():
    
 # Test routes, TODO should add health checks for monitoring and deployment purposes
 
-@app.route('/testdb')
-def testdb():
-    # ODBC works for local windows maching with ODBC Driver 18. Change to Driver={FreeTDS} for deployed Linux
-    # driver_string = 'Driver={ODBC Driver 18 for SQL Server};' if os.name == 'nt' else 'Driver={FreeTDS};'
-    # connection_string = driver_string + os.getenv('AZURE_SQL_CONNECTIONSTRING')
-    try:
-        # Create connection to SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
-        totalString = "players are: "
-        # Execute SQL query and build result
-        cursor.execute("SELECT * FROM Player")
-        for row in cursor.fetchall():
-            totalString += row.FirstName + " " + row.color + ", "
-        return jsonify({"people": totalString})
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
+# @app.route('/testdb')
+# def testdb():
+#     # ODBC works for local windows maching with ODBC Driver 18. Change to Driver={FreeTDS} for deployed Linux
+#     # driver_string = 'Driver={ODBC Driver 18 for SQL Server};' if os.name == 'nt' else 'Driver={FreeTDS};'
+#     # connection_string = driver_string + os.getenv('AZURE_SQL_CONNECTIONSTRING')
+#     try:
+#         # Create connection to SQL Database
+#         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+#         cursor = conn.cursor()
+#         totalString = "players are: "
+#         # Execute SQL query and build result
+#         cursor.execute("SELECT * FROM PlayerBrief")
+#         for row in cursor.fetchall():
+#             garbageValue = getattr(row, 'Garbage', "No garabage")
+#             name = None
+#             if hasattr(row, 'Name'): 
+#                 name = row.Name
+#             totalString += str(name) + " " + row.Color + ", " + str(garbageValue) + '\n'
+#         return jsonify({"people": totalString})
+#     except Exception as e:
+#         return jsonify({"error": str(e)})
+    
+# @app.route('/testparams', methods=['POST'])
+# def testparams():
+#     try:
+#         data = request.json
+#         name = data.get('name')
+#         color = data.get('color')
+#         print(name)
+#         print(color)
+#         print(data)
+                
+#         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+#         cursor = conn.cursor()
+#         cursor.execute(f'''INSERT INTO Session (JoinCode, 
+#                        Round, StartDate, 
+#                        EndDate) VALUES (?, 0, ?, ?)''',
+#             (str(129), None, datetime.today().strftime('%Y-%m-%d %H:%M:%S')))
+#         conn.commit()
+#         return jsonify({"success": True})
+#     except Exception as e:
+#         print(e)
+#         return jsonify({"error": str(e)})
 
 
 # All real methods to be used by application:
@@ -113,13 +138,13 @@ def sessionStatus():
             return jsonify({"error": "Session not found"})
         
         # Checking that player is still in their current session (they may have been kicked by host)
-        cursor.execute(f"SELECT * FROM Player WHERE Id = ?", (str(playerId)))
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(playerId)))
         player = cursor.fetchone()
         if player and str(player.SessionId) != str(sessionId):
             return jsonify({"error": "Player not in session"})
 
         # Check that players exist with matching sessionId
-        cursor.execute(f"SELECT * FROM Player WHERE SessionId = ?", (str(sessionId)))
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE SessionId = ?", (str(sessionId)))
         players = cursor.fetchall()
         if not players:
             return jsonify({"error": "Players not found"})
@@ -127,13 +152,15 @@ def sessionStatus():
         # Save array of all players in the session
         playerList = []
         for player in players:
-            playerList.append({"id": player.Id, "firstName": player.FirstName, "color": player.Color, "scores": []})
+            playerList.append({"id": player.Id, "name": player.Name, "color": player.Color, "scores": []})
             # For each player, also save their scores
             cursor.execute(f"SELECT * FROM RoundResult WHERE PlayerId = ?", (str(player.Id)))
             scores = cursor.fetchall()
             if scores:
                 for score in scores:
-                    playerList[-1]["scores"].append({"shots": score.Shots, "cost": score.Cost, "round": score.Round})
+                    playerList[-1]["scores"].append({"shots": score.Shots, "cost": score.Cost, "round": score.Round,
+                        "solverOne": getattr(score, 'SolverOne', False), "solverTwo": getattr(score, 'SolverTwo', False),
+                        "solverThree": getattr(score, 'SolverThree', False)})
 
         return jsonify({"success": True, "players": playerList, 
                         "session": {"startDate": session.StartDate, "endDate": session.EndDate, "round": session.Round}})
@@ -146,11 +173,42 @@ def sessionStatus():
 @app.route('/player/host', methods=['POST'])
 def host():
     try:
-        # TODO decide on exact data wanted for each player
-        # First check that required data is in request
+        # First pull data from request
         data = request.json
-        firstName = data.get('firstName')
+        name = data.get('name')
         color = data.get('color')
+        participationReason = data.get('participationReason')
+        gender = data.get('gender')
+        age = data.get('age')
+        country = data.get('country')
+        hobbies = data.get('hobbies')
+        isCollegeStudent = data.get('isCollegeStudent')
+        university = data.get('university')
+        degreeProgram = data.get('degreeProgram')
+        yearsInProgram = data.get('yearsInProgram')
+        highSchoolEducation = data.get('highSchoolEducation')
+        associatesEducation = data.get('associatesEducation')
+        bachelorsEducation = data.get('bachelorsEducation')
+        mastersEducation = data.get('mastersEducation')
+        professionalEducation = data.get('professionalEducation')
+        doctorateEducation = data.get('doctorateEducation')
+        otherEducation = data.get('otherEducation')
+        otherEducationName = data.get('otherEducationName')
+        aerospaceEngineeringSpecialization = data.get('aerospaceEngineeringSpecialization')
+        designSpecialization = data.get('designSpecialization')
+        electricalEngineeringSpecialization = data.get('electricalEngineeringSpecialization')
+        industrialEngineeringSpecialization = data.get('industrialEngineeringSpecialization')
+        manufacturingSpecialization = data.get('manufacturingSpecialization')
+        materialScienceSpecialization = data.get('materialScienceSpecialization')
+        mechanicalEngineeringSpecialization = data.get('mechanicalEngineeringSpecialization')
+        softwareSpecialization = data.get('softwareSpecialization')
+        systemsEngineeringSpecialization = data.get('systemsEngineeringSpecialization')
+        otherSpecialization = data.get('otherSpecialization')
+        otherSpecializationName = data.get('otherSpecializationName')
+        systemsEngineeringExpertise = data.get('systemsEngineeringExpertise')
+        statementOfWorkExpertise = data.get('statementOfWorkExpertise')
+
+        # TODO return error if there are not required params
 
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
@@ -175,9 +233,27 @@ def host():
         # Generate UUID for player
         playerId = uuid.uuid4()
 
-        # Now create new player and insert them into the database
-        cursor.execute(f"INSERT INTO Player (Id, FirstName, Color, SessionId) VALUES (?, ?, ?, ?)", 
-            (playerId, firstName, color, str(joinCode)))  
+        # Create brief version of Player to be retrieved during the game polling
+        cursor.execute(f"INSERT INTO PlayerBrief (Id, Name, Color, SessionId) VALUES (?, ?, ?, ?)",
+            (playerId, name, color, str(joinCode)))
+        conn.commit()
+
+        # Now create new extensive Player Information and save all information in the db with the same id
+        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Country, 
+                       Hobbies, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
+                       AssociatesEducation, BachelorsEducation, MastersEducation, ProfessionalEducation, 
+                       DoctorateEducation, OtherEducation, OtherEducationName, AerospaceEngineeringSpecialization,
+                       DesignSpecialization, ElectricalEngineeringSpecialization, IndustrialEngineeringSpecialization,
+                       ManufacturingSpecialization, MaterialScienceSpecialization, MechanicalEngineeringSpecialization,
+                       SoftwareSpecialization, SystemsEngineeringSpecialization, OtherSpecialization, OtherSpecializationName,
+                       SystemsEngineeringExpertise, StatementOfWorkExpertise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+            (playerId, name, participationReason, gender, age, country, hobbies, isCollegeStudent, university, degreeProgram,
+             yearsInProgram, highSchoolEducation, associatesEducation, bachelorsEducation, mastersEducation, professionalEducation,
+             doctorateEducation, otherEducation, otherEducationName, aerospaceEngineeringSpecialization, designSpecialization,
+             electricalEngineeringSpecialization, industrialEngineeringSpecialization, manufacturingSpecialization, materialScienceSpecialization,
+             mechanicalEngineeringSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
+             otherSpecializationName, systemsEngineeringExpertise, statementOfWorkExpertise))  
         conn.commit()
 
         # On success return success and join code
@@ -190,12 +266,43 @@ def host():
 @app.route('/player/join', methods=['POST'])
 def join():
     try:
-        # TODO decide on exact data wanted for each player
-        # First check that required data is in request, must have valid join code
+        # First pull data request, must have valid join code
         data = request.json
-        firstName = data.get('firstName')
+        name = data.get('name')
         color = data.get('color')
+        participationReason = data.get('participationReason')
+        gender = data.get('gender')
+        age = data.get('age')
+        country = data.get('country')
+        hobbies = data.get('hobbies')
+        isCollegeStudent = data.get('isCollegeStudent')
+        university = data.get('university')
+        degreeProgram = data.get('degreeProgram')
+        yearsInProgram = data.get('yearsInProgram')
+        highSchoolEducation = data.get('highSchoolEducation')
+        associatesEducation = data.get('associatesEducation')
+        bachelorsEducation = data.get('bachelorsEducation')
+        mastersEducation = data.get('mastersEducation')
+        professionalEducation = data.get('professionalEducation')
+        doctorateEducation = data.get('doctorateEducation')
+        otherEducation = data.get('otherEducation')
+        otherEducationName = data.get('otherEducationName')
+        aerospaceEngineeringSpecialization = data.get('aerospaceEngineeringSpecialization')
+        designSpecialization = data.get('designSpecialization')
+        electricalEngineeringSpecialization = data.get('electricalEngineeringSpecialization')
+        industrialEngineeringSpecialization = data.get('industrialEngineeringSpecialization')
+        manufacturingSpecialization = data.get('manufacturingSpecialization')
+        materialScienceSpecialization = data.get('materialScienceSpecialization')
+        mechanicalEngineeringSpecialization = data.get('mechanicalEngineeringSpecialization')
+        softwareSpecialization = data.get('softwareSpecialization')
+        systemsEngineeringSpecialization = data.get('systemsEngineeringSpecialization')
+        otherSpecialization = data.get('otherSpecialization')
+        otherSpecializationName = data.get('otherSpecializationName')
+        systemsEngineeringExpertise = data.get('systemsEngineeringExpertise')
+        statementOfWorkExpertise = data.get('statementOfWorkExpertise')
         joinCode = data.get('joinCode')
+
+        # TODO return error if there are not required params
 
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
@@ -214,9 +321,27 @@ def join():
         # Generate UUID for player
         playerId = uuid.uuid4()
 
-        # Now create new player and insert them into the database
-        cursor.execute(f"INSERT INTO Player (Id, FirstName, Color, SessionId) VALUES (?, ?, ?, ?)", 
-            (playerId, firstName, color, str(joinCode)))  
+        # Now create new brief version of the player and insert them into the database
+        cursor.execute(f"INSERT INTO PlayerBrief (Id, Name, Color, SessionId) VALUES (?, ?, ?, ?)", 
+            (playerId, name, color, str(joinCode)))  
+        conn.commit()
+
+        # Now save extensive player information into the database
+        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Country, 
+                       Hobbies, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
+                       AssociatesEducation, BachelorsEducation, MastersEducation, ProfessionalEducation, 
+                       DoctorateEducation, OtherEducation, OtherEducationName, AerospaceEngineeringSpecialization,
+                       DesignSpecialization, ElectricalEngineeringSpecialization, IndustrialEngineeringSpecialization,
+                       ManufacturingSpecialization, MaterialScienceSpecialization, MechanicalEngineeringSpecialization,
+                       SoftwareSpecialization, SystemsEngineeringSpecialization, OtherSpecialization, OtherSpecializationName,
+                       SystemsEngineeringExpertise, StatementOfWorkExpertise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+            (playerId, name, participationReason, gender, age, country, hobbies, isCollegeStudent, university, degreeProgram,
+             yearsInProgram, highSchoolEducation, associatesEducation, bachelorsEducation, mastersEducation, professionalEducation,
+             doctorateEducation, otherEducation, otherEducationName, aerospaceEngineeringSpecialization, designSpecialization,
+             electricalEngineeringSpecialization, industrialEngineeringSpecialization, manufacturingSpecialization, materialScienceSpecialization,
+             mechanicalEngineeringSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
+             otherSpecializationName, systemsEngineeringExpertise, statementOfWorkExpertise))  
         conn.commit()
 
         return jsonify({"success": True, "playerId": playerId})
@@ -240,12 +365,12 @@ def remove():
         cursor = conn.cursor()
 
         # Ensure player exists
-        cursor.execute(f"SELECT * FROM Player WHERE Id = ?", (str(playerId)))
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(playerId)))
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
         
-        cursor.execute(f"UPDATE Player SET SessionId = Null WHERE Id = ?", str(playerId))
+        cursor.execute(f"UPDATE PlayerBrief SET SessionId = Null WHERE Id = ?", str(playerId))
         conn.commit()
 
         return jsonify({"success": True})
@@ -254,6 +379,7 @@ def remove():
         return jsonify({"error": str(e)})
 
 # Joins a game creating a player for a given session IF that session exists
+# TODO TODO Save solver types selected for the round!! Essential for comparing data. 
 @app.route('/player/result', methods=['POST'])
 def result():
     try:
@@ -264,6 +390,9 @@ def result():
         id = data.get('playerId')
         shots = data.get('shots')
         cost = data.get('cost')
+        solverOne = data.get('solverOne')
+        solverTwo = data.get('solverTwo')
+        solverThree = data.get('solverThree')
         round = data.get('round')
 
         # Create connection to Azure SQL Database
@@ -271,16 +400,18 @@ def result():
         cursor = conn.cursor()
 
         # Check that player exists
-        cursor.execute(f"SELECT * FROM Player WHERE Id = ?", (str(id)))
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
         
-        print(f"SQL For saving result: INSERT INTO RoundResult (PlayerId, Shots, Cost, Round) VALUES (?, ?, ?, ?)", (str(id), str(shots), str(cost), str(round)))
+        # solver types: quantity is dependent on round number, there may be 1 (rounds 1 and 2), 
+        # 2 (round 3), or 3 (round 4)
+        # So space is reserved for 3 solvers for each round result but value may be None / Null
 
         # Now create new Round Result and insert into its table
-        cursor.execute(f"INSERT INTO RoundResult (PlayerId, Shots, Cost, Round) VALUES (?, ?, ?, ?)", 
-                       (str(id), str(shots), str(cost), str(round)))  
+        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                       (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id)))  
         conn.commit()
 
         return jsonify({"success": True})
