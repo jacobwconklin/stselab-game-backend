@@ -1,3 +1,6 @@
+## Deployment
+Deployed through Azure, currently live at:
+https://stse-backend.azurewebsites.net/
 
 ## Running Locally
 To run locally and update whenever changes are saved run the command:

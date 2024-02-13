@@ -24,7 +24,20 @@ CREATE TABLE RoundResult (
     SolverTwo int,
     SolverThree int,
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+    Architecture varchar(20),
 );
+
+-- Free Roam Result from expiremental playground
+-- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
+-- Modules are ints where 1 -> Drive, 2 -> Long, 3 -> Fairway, 4 -> Short, 5 -> Putt
+CREATE TABLE FreeRoamResult (
+    Id int IDENTITY(1,1) PRIMARY KEY,
+    Shots int,
+    Distance int,
+    Solver int,
+    Module int,
+    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+)
 
 -- Player Brief Table:
 CREATE TABLE PlayerBrief (
