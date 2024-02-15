@@ -2,8 +2,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from users import host, join, roundResult, remove, freeRoamResult
+import requests
+from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey
 from session import sessionStatus, advanceSession
+from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
 from flask_cors import CORS
@@ -74,6 +76,23 @@ app.add_url_rule('/player/join', 'player/join', join, methods=['POST'])
 app.add_url_rule('/player/roundResult', 'player/roundResult', roundResult, methods=['POST'])
 app.add_url_rule('/player/remove', 'player/remove', remove, methods=['POST'])
 app.add_url_rule('/player/freeRoamResult', 'player/freeRoamResult', freeRoamResult, methods=['POST'])
+app.add_url_rule('/player/freeRoamSurvey', 'player/freeRoamSurvey', freeRoamSurvey, methods=['POST'])
+
+# Deployed Simulation is only avialable via http, so the front-end cannot make requests to it 
+# as it would be mixed content. Without a registered domain name and SSL certificate the droplet
+# it is hosted on cannot be made into an https API. Therefore calls must come from the backend, so 
+# the front end will make requests here just to pass them on to the simulation.
+# simulation routes handled in simulation.py
+app.add_url_rule('/playDrive', 'playDrive', playDrive, methods=['POST'])
+app.add_url_rule('/playLong', 'playLong', playLong, methods=['POST'])
+app.add_url_rule('/playFairway', 'playFairway', playFairway, methods=['POST'])
+app.add_url_rule('/playShort', 'playShort', playShort, methods=['POST'])
+app.add_url_rule('/playPutt', 'playPutt', playPutt, methods=['POST'])
+app.add_url_rule('/h_arch', 'h_arch', h_arch, methods=['POST'])
+app.add_url_rule('/lp_arch', 'lp_arch', lp_arch, methods=['POST'])
+app.add_url_rule('/dap_arch', 'dap_arch', dap_arch, methods=['POST'])
+app.add_url_rule('/ds_arch', 'ds_arch', ds_arch, methods=['POST'])
+
 
 # TODO may switch to websocket connection for backend with https://flask-socketio.readthedocs.io/en/latest/
 # Websocket endpoints:

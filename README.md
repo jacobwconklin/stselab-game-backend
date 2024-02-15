@@ -3,6 +3,16 @@ Deployed through Azure, currently live at:
 https://stse-backend.azurewebsites.net/
 
 ## Running Locally
+Create a python virtual environment with
+python -m venv .venv
+
+Activate and use that environment with
+source .venv/Scripts/activate
+
+Install all requirements with 
+pip install -r requirements.txt
+
+Then just make sure to source the environment again whenever returning.
 To run locally and update whenever changes are saved run the command:
 flask --app app.py --debug run
 

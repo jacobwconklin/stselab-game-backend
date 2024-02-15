@@ -252,7 +252,7 @@ def roundResult():
         # So space is reserved for 3 solvers for each round result but value may be None / Null
 
         # Now create new Round Result and insert into its table
-        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
                        (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id), architecture))  
         conn.commit()
 
@@ -285,8 +285,50 @@ def freeRoamResult():
             return jsonify({"error": "Player not found"})
 
         # Now create new Free Roam Result and insert into its table
-        cursor.execute(f"INSERT INTO FreeRoamResult (Shots, Distance, Solver, Module, PlayerId) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+        cursor.execute(f"INSERT INTO FreeRoamResult (Shots, Distance, Solver, Module, PlayerId) VALUES (?, ?, ?, ?, ?)", 
                        (str(shots), str(distance), solver, module, str(id)))  
+        conn.commit()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+    
+# Saves the result of a player Free roam survey 
+# The number stored per module is for a solver as an int that can represent multiple solvers as follows:
+# 1 -> Professional
+# 2 -> Amateur
+# 3 -> Specialist
+# 4 -> Professional and Amateur
+# 5 -> Professional and Specialist
+# 6 -> Amateur and Specialist
+# 7 -> Professional, Amateur, and Specialist (could be stored in 3 bits!)
+def freeRoamSurvey():
+    try:
+        # Save player's results for a round in the tournament
+        # First check that required data is in request, must have valid Id for Player,
+        # as well as shot, cost, and round information
+        data = request.json
+        id = data.get('playerId')
+        drive = data.get('drive')
+        long = data.get('long')
+        fairway = data.get('fairway')
+        short = data.get('short')
+        putt = data.get('putt')
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Check that player exists
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        player = cursor.fetchone()
+        if player is None:
+            return jsonify({"error": "Player not found"})
+
+        # Now create new Free Roam Result and insert into its table
+        cursor.execute(f"INSERT INTO FreeRoamSurvey (Drive, Long, Fairway, Short, Putt, PlayerId) VALUES (?, ?, ?, ?, ?, ?)", 
+                       (str(drive), str(long), str(fairway), str(short), str(putt), str(id)))  
         conn.commit()
 
         return jsonify({"success": True})

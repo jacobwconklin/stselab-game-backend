@@ -39,6 +39,25 @@ CREATE TABLE FreeRoamResult (
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
 )
 
+-- Free Roam Survey Results for players to choose the best solver for each module.
+-- The number stored per module is for a solver as an int that can represent multiple solvers as follows:
+-- 1 -> Professional
+-- 2 -> Amateur
+-- 3 -> Specialist
+-- 4 -> Professional and Amateur
+-- 5 -> Professional and Specialist
+-- 6 -> Amateur and Specialist
+-- 7 -> Professional, Amateur, and Specialist (could be stored in 3 bits!)
+CREATE TABLE FreeRoamSurvey (
+    Id int IDENTITY(1,1) PRIMARY KEY,
+    Drive int,
+    Long int,
+    Fairway int,
+    Short int,
+    Putt int,
+    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+)
+
 -- Player Brief Table:
 CREATE TABLE PlayerBrief (
     Id varchar(255) PRIMARY KEY,

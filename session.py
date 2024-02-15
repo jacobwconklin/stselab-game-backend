@@ -80,7 +80,12 @@ def advanceSession():
         if session is None:
             return jsonify({"error": "Session not found"})
         
-        cursor.execute(f"UPDATE Session SET Round = ? WHERE JoinCode = ?", (str(session.Round + 1), str(sessionId)))
+        newRoundNumber = session.Round + 1
+        if (newRoundNumber == 3):
+            newRoundNumber = -2
+        elif (newRoundNumber == 0):
+            newRoundNumber = 3
+        cursor.execute(f"UPDATE Session SET Round = ? WHERE JoinCode = ?", (str(newRoundNumber), str(sessionId)))
         conn.commit()
 
         return jsonify({"success": True, "round": session.Round + 1})
