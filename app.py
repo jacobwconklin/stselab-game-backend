@@ -4,7 +4,7 @@ load_dotenv()
 
 import requests
 from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey
-from session import sessionStatus, advanceSession
+from session import sessionStatus, advanceSession, roundResults, finalResults
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
@@ -69,6 +69,8 @@ def hello():
 # Session routes handled in session.py
 app.add_url_rule('/session/status', 'session/status', sessionStatus, methods=['POST'])
 app.add_url_rule('/session/advance', 'session/advance', advanceSession, methods=['POST'])
+app.add_url_rule('/session/roundresults', 'session/roundresults', roundResults, methods=['POST'])
+app.add_url_rule('/session/finalresults', 'session/finalresults', finalResults, methods=['POST'])
 
 # User routes handled in users.py
 app.add_url_rule('/player/host', 'player/host', host, methods=['POST'])

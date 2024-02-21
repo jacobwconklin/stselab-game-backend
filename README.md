@@ -2,19 +2,54 @@
 Deployed through Azure, currently live at:
 https://stse-backend.azurewebsites.net/
 
-## Running Locally
-Create a python virtual environment with
+# Running Locally
+
+'''
+Denotes code to run on bash terminal (not sure if adjustments needed for Windows Powershell)
+'''
+
+## First time:
+1) Create file in the same level as app.py named 'environmentSecrets.py'.
+In this file add the line: AZURE_SQL_CONNECTION_STRING = 'database connection string'
+where database connection 
+
+
+2) Install Python if not already installed on machine
+
+3) Create a python virtual environment with
+'''
 python -m venv .venv
+'''
 
-Activate and use that environment with
+4) Activate and use that environment with
+'''
 source .venv/Scripts/activate
+'''
 
-Install all requirements with 
+5) Install all requirements with 
+'''
 pip install -r requirements.txt
+'''
 
-Then just make sure to source the environment again whenever returning.
-To run locally and update whenever changes are saved run the command:
+6) To run locally and update whenever changes are saved run the command:
+'''
 flask --app app.py --debug run
+'''
+
+7) Local backend will be accessible at:
+http://127.0.0.1:5000
+
+
+## Already have .venv
+1) Make sure to source the environment again whenever returning.
+'''
+source .venv/Scripts/activate
+'''
+
+2) Then run locally:
+'''
+flask --app app.py --debug run
+'''
 
 # Deploy a Python (Flask) web app to Azure App Service - Sample Application
 
