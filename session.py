@@ -116,6 +116,7 @@ def roundResults():
                 playerList[-1]["solverTwo"] = getattr(score, 'SolverTwo', None)
                 playerList[-1]["solverThree"] = getattr(score, 'SolverThree', None)
                 playerList[-1]["architecture"] = score.Architecture
+                playerList[-1]["score"] = score.Score
 
         return jsonify({"success": True, "results": playerList})
     except Exception as e:
@@ -148,7 +149,7 @@ def finalResults():
             scores = cursor.fetchall()
             if scores:
                 for score in scores:
-                    playerList[-1]["scores"].append({"shots": score.Shots, "cost": score.Cost, "round": score.Round,
+                    playerList[-1]["scores"].append({"shots": score.Shots, "cost": score.Cost, "score": score.Score, "round": score.Round,
                         "solverOne": getattr(score, 'SolverOne', False), "solverTwo": getattr(score, 'SolverTwo', False),
                         "solverThree": getattr(score, 'SolverThree', False), "architecture": score.Architecture})
 

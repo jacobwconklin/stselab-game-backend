@@ -25,6 +25,7 @@ CREATE TABLE RoundResult (
     SolverThree int,
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
     Architecture varchar(20),
+    Score int
 );
 
 -- Free Roam Result from expiremental playground
@@ -94,6 +95,8 @@ CREATE TABLE PlayerInformation (
     ManufacturingSpecialization varchar(255),
     MaterialScienceSpecialization varchar(255),
     MechanicalEngineeringSpecialization varchar(255),
+    ProjectManagementSpecialization varchar(255),
+    RoboticsSpecialization varchar (255),
     SoftwareSpecialization varchar(255),
     SystemsEngineeringSpecialization varchar(255),
     OtherSpecialization varchar(255),

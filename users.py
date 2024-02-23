@@ -42,6 +42,8 @@ def host():
         manufacturingSpecialization = data.get('manufacturingSpecialization')
         materialScienceSpecialization = data.get('materialScienceSpecialization')
         mechanicalEngineeringSpecialization = data.get('mechanicalEngineeringSpecialization')
+        projectManagementSpecialization = data.get('projectManagementSpecialization')
+        roboticsSpecialization = data.get('roboticsSpecialization')
         softwareSpecialization = data.get('softwareSpecialization')
         systemsEngineeringSpecialization = data.get('systemsEngineeringSpecialization')
         otherSpecialization = data.get('otherSpecialization')
@@ -86,14 +88,15 @@ def host():
                        DoctorateEducation, OtherEducation, OtherEducationName, AerospaceEngineeringSpecialization,
                        DesignSpecialization, ElectricalEngineeringSpecialization, IndustrialEngineeringSpecialization,
                        ManufacturingSpecialization, MaterialScienceSpecialization, MechanicalEngineeringSpecialization,
+                       ProjectManagementSpecialization, RoboticsSpecialization, 
                        SoftwareSpecialization, SystemsEngineeringSpecialization, OtherSpecialization, OtherSpecializationName,
                        SystemsEngineeringExpertise, StatementOfWorkExpertise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
             (playerId, name, participationReason, gender, age, country, hobbies, isCollegeStudent, university, degreeProgram,
              yearsInProgram, highSchoolEducation, associatesEducation, bachelorsEducation, mastersEducation, professionalEducation,
              doctorateEducation, otherEducation, otherEducationName, aerospaceEngineeringSpecialization, designSpecialization,
              electricalEngineeringSpecialization, industrialEngineeringSpecialization, manufacturingSpecialization, materialScienceSpecialization,
-             mechanicalEngineeringSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
+             mechanicalEngineeringSpecialization,  projectManagementSpecialization, roboticsSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
              otherSpecializationName, systemsEngineeringExpertise, statementOfWorkExpertise))  
         conn.commit()
 
@@ -135,6 +138,8 @@ def join():
         manufacturingSpecialization = data.get('manufacturingSpecialization')
         materialScienceSpecialization = data.get('materialScienceSpecialization')
         mechanicalEngineeringSpecialization = data.get('mechanicalEngineeringSpecialization')
+        projectManagementSpecialization = data.get('projectManagementSpecialization')
+        roboticsSpecialization = data.get('roboticsSpecialization')
         softwareSpecialization = data.get('softwareSpecialization')
         systemsEngineeringSpecialization = data.get('systemsEngineeringSpecialization')
         otherSpecialization = data.get('otherSpecialization')
@@ -174,14 +179,15 @@ def join():
                        DoctorateEducation, OtherEducation, OtherEducationName, AerospaceEngineeringSpecialization,
                        DesignSpecialization, ElectricalEngineeringSpecialization, IndustrialEngineeringSpecialization,
                        ManufacturingSpecialization, MaterialScienceSpecialization, MechanicalEngineeringSpecialization,
+                       ProjectManagementSpecialization, RoboticsSpecialization, 
                        SoftwareSpecialization, SystemsEngineeringSpecialization, OtherSpecialization, OtherSpecializationName,
                        SystemsEngineeringExpertise, StatementOfWorkExpertise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
             (playerId, name, participationReason, gender, age, country, hobbies, isCollegeStudent, university, degreeProgram,
              yearsInProgram, highSchoolEducation, associatesEducation, bachelorsEducation, mastersEducation, professionalEducation,
              doctorateEducation, otherEducation, otherEducationName, aerospaceEngineeringSpecialization, designSpecialization,
              electricalEngineeringSpecialization, industrialEngineeringSpecialization, manufacturingSpecialization, materialScienceSpecialization,
-             mechanicalEngineeringSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
+             mechanicalEngineeringSpecialization, projectManagementSpecialization, roboticsSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
              otherSpecializationName, systemsEngineeringExpertise, statementOfWorkExpertise))  
         conn.commit()
 
@@ -236,6 +242,10 @@ def roundResult():
         solverThree = data.get('solverThree')
         architecture = data.get('architecture')
         round = data.get('round')
+        score = data.get('score')
+        # if score is none save it as -1
+        if score is None:
+            score = -1
 
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
@@ -252,8 +262,8 @@ def roundResult():
         # So space is reserved for 3 solvers for each round result but value may be None / Null
 
         # Now create new Round Result and insert into its table
-        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                       (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id), architecture))  
+        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture, Score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                       (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id), architecture, str(score)))  
         conn.commit()
 
         return jsonify({"success": True})
