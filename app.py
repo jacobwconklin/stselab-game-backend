@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-import requests
 from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey
 from session import sessionStatus, advanceSession, roundResults, finalResults
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
@@ -10,6 +9,7 @@ from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
 from flask_cors import CORS
 from environmentSecrets import AZURE_SQL_CONNECTION_STRING
+from waitress import serve;
 
 app = Flask(__name__)
 CORS(app)
@@ -105,5 +105,6 @@ app.add_url_rule('/ds_arch', 'ds_arch', ds_arch, methods=['POST'])
     # And the session status changing (starting, round changing, ending)
 
 
-if __name__ == '__main__':
-    app.run()
+# if __name__ == '__main__':
+#     app.run(host="0.0.0.0")
+serve(app, host="0.0.0.0", port=5000, threads=1)
