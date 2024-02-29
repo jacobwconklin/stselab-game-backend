@@ -1,5 +1,6 @@
 # Contains endpoints for user actions
 
+import json
 import pyodbc 
 import random
 import uuid
@@ -227,7 +228,6 @@ def remove():
 
 
 # Saves the result for one player for one round of the tournament. Includes shots, cost, and solvers played with
-# TODO Also need to include architecture
 def roundResult():
     try:
         # Save player's results for a round in the tournament
@@ -267,6 +267,30 @@ def roundResult():
         conn.commit()
 
         return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+    
+# Retreives ALL Round Results to show aggregate results across all tournaments played before. 
+def allResults():
+    try:
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Get all round results from Tournament Stages
+        cursor.execute("SELECT * FROM RoundResult JOIN PlayerBrief ON RoundResult.PlayerId = PlayerBrief.Id WHERE Round > 5")
+        results = cursor.fetchall()
+
+        #  pyodbc.Row objects are not json serializable so convert and coerce any values not serializable (like decimals) into strings
+        # results = [tuple(row) for row in results] # Saves as a tuple, harder to read on FE
+        # json_string = json.dumps(results, default=str)
+        resultList = []
+        for result in results:
+            resultList.append({"id": result.Id, "name": result.Name, "color": result.Color, "score": result.Score, "round": result.Round, "shots": result.Shots, "cost": result.Cost, "solverOne": result.SolverOne, "solverTwo": result.SolverTwo, "solverThree": result.SolverThree, "architecture": result.Architecture})
+
+        # Now return all results
+        return  jsonify({"results": resultList})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
@@ -345,3 +369,4 @@ def freeRoamSurvey():
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    

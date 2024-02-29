@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import requests
-from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey
-from session import sessionStatus, advanceSession, roundResults, finalResults
+from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults
+from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
@@ -55,7 +55,7 @@ def hello():
         # when the session is over. Also use round to tell what round the session is on (or could just make round 0 and round 4 represent
         # start and end time and not need those fields, but may be nice to have when the sessions actually happened). 
     # record hole result (for all)
-        # TODO decide if FE or BE hits Plumber, if BE then endpoint for recording hole will take in all necessary params
+        # TODO BE serves as a path to hit Plumber R code as it is over http, could have backend directly save results rather than FE making a second call to BE to save them.
         # Such as round #, solvers, etc, and will call R then record hole, otherwise just save results from FE
     # get scores for round for session (for all)
     # get scores for all 3 rounds for session (for all)
@@ -68,9 +68,12 @@ def hello():
    
 # Session routes handled in session.py
 app.add_url_rule('/session/status', 'session/status', sessionStatus, methods=['POST'])
+app.add_url_rule('/session/players', 'session/players', playersInSession, methods=['POST'])
+app.add_url_rule('/session/end', 'session/end', endSession, methods=['POST'])
 app.add_url_rule('/session/advance', 'session/advance', advanceSession, methods=['POST'])
 app.add_url_rule('/session/roundresults', 'session/roundresults', roundResults, methods=['POST'])
 app.add_url_rule('/session/finalresults', 'session/finalresults', finalResults, methods=['POST'])
+app.add_url_rule('/session/surveyssubmitted', 'session/surveyssubmitted', surveysSubmitted, methods=['POST'])
 
 # User routes handled in users.py
 app.add_url_rule('/player/host', 'player/host', host, methods=['POST'])
@@ -79,6 +82,7 @@ app.add_url_rule('/player/roundResult', 'player/roundResult', roundResult, metho
 app.add_url_rule('/player/remove', 'player/remove', remove, methods=['POST'])
 app.add_url_rule('/player/freeRoamResult', 'player/freeRoamResult', freeRoamResult, methods=['POST'])
 app.add_url_rule('/player/freeRoamSurvey', 'player/freeRoamSurvey', freeRoamSurvey, methods=['POST'])
+app.add_url_rule('/player/allResults', 'player/allResults', allResults, methods=['GET'])
 
 # Deployed Simulation is only avialable via http, so the front-end cannot make requests to it 
 # as it would be mixed content. Without a registered domain name and SSL certificate the droplet
