@@ -330,13 +330,14 @@ def freeRoamResult():
     
 # Saves the result of a player Free roam survey 
 # The number stored per module is for a solver as an int that can represent multiple solvers as follows:
+# 0 -> None = Not Sure
 # 1 -> Professional
 # 2 -> Amateur
 # 3 -> Specialist
 # 4 -> Professional and Amateur
 # 5 -> Professional and Specialist
 # 6 -> Amateur and Specialist
-# 7 -> Professional, Amateur, and Specialist (could be stored in 3 bits!)
+# 7 -> Professional, Amateur, and Specialist (could be stored without not sure option in 3 bits!)
 def freeRoamSurvey():
     try:
         # Save player's results for a round in the tournament

@@ -1,5 +1,6 @@
 # Contains endpoints for session actions
 
+import datetime
 import pyodbc 
 from dotenv import load_dotenv
 load_dotenv()
@@ -92,7 +93,9 @@ def endSession():
             return jsonify({"error": "Session not found"})
         
         # Update the end date of the session
-        cursor.execute(f"UPDATE Session SET EndDate = GETUTCDATE() WHERE JoinCode = ?", (str(sessionId))) # TODO decide if using utc date... 
+        # TODO to use UTC date just put GETUTCDATE() in the query
+        cursor.execute(f"UPDATE Session SET EndDate = ? WHERE JoinCode = ?", 
+            (datetime.today().strftime('%Y-%m-%d %H:%M:%S'), str(sessionId)))
 
     except Exception as e:
             print(e)
