@@ -271,6 +271,50 @@ def roundResult():
         print(e)
         return jsonify({"error": str(e)})
     
+# Saves the result for one player for one round of the Mechanical Arm Mission. Includes Grams(weight), cost, architecture, score, and solvers played with
+def armRoundResult():
+    try:
+        # Save player's results for a round in the Mechanical Arm Mission
+        # First check that required data is in request, must have valid Id for Player,
+        # as well as weight, cost, and round information
+        data = request.json
+        id = data.get('playerId')
+        weight = data.get('weight')
+        cost = data.get('cost')
+        solverOne = data.get('solverOne')
+        solverTwo = data.get('solverTwo')
+        solverThree = data.get('solverThree')
+        solverFour = data.get('solverFour')
+        architecture = data.get('architecture')
+        round = data.get('round')
+        score = data.get('score')
+        # if score is none save it as -1
+        if score is None:
+            score = -1
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Check that player exists
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        player = cursor.fetchone()
+        if player is None:
+            return jsonify({"error": "Player not found"})
+        
+        # solver types: quantity is dependent on round number, there may be 1 - 4
+        # So space is reserved for 4 solvers for each round result but value may be None / Null
+
+        # Now create new Round Result and insert into its table
+        cursor.execute(f"INSERT INTO ArmRoundResult (Round, Grams, Cost, SolverOne, SolverTwo, SolverThree, SolverFour, PlayerId, Architecture, Score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                       (str(round), str(weight), str(cost), solverOne, solverTwo, solverThree, solverFour, str(id), architecture, str(score)))  
+        conn.commit()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+    
 # Retreives ALL Round Results to show aggregate results across all tournaments played before. 
 def allResults():
     try:

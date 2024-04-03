@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import requests
-from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults
-from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession
+from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults, armRoundResult
+from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
@@ -73,6 +73,9 @@ app.add_url_rule('/session/advance', 'session/advance', advanceSession, methods=
 app.add_url_rule('/session/roundresults', 'session/roundresults', roundResults, methods=['POST'])
 app.add_url_rule('/session/finalresults', 'session/finalresults', finalResults, methods=['POST'])
 app.add_url_rule('/session/surveyssubmitted', 'session/surveyssubmitted', surveysSubmitted, methods=['POST'])
+# Mechanical Arm Mission:
+app.add_url_rule('/session/armroundresults', 'session/armroundresults', armRoundResults, methods=['POST'])
+app.add_url_rule('/session/armfinalresults', 'session/armfinalresults', armFinalResults, methods=['POST'])
 
 # User routes handled in users.py
 app.add_url_rule('/player/host', 'player/host', host, methods=['POST'])
@@ -82,6 +85,8 @@ app.add_url_rule('/player/remove', 'player/remove', remove, methods=['POST'])
 app.add_url_rule('/player/freeRoamResult', 'player/freeRoamResult', freeRoamResult, methods=['POST'])
 app.add_url_rule('/player/freeRoamSurvey', 'player/freeRoamSurvey', freeRoamSurvey, methods=['POST'])
 app.add_url_rule('/player/allResults', 'player/allResults', allResults, methods=['GET'])
+# Mechanical Arm Mission:
+app.add_url_rule('/player/armRoundResult', 'player/armRoundResult', armRoundResult, methods=['POST'])
 
 # Deployed Simulation is only avialable via http, so the front-end cannot make requests to it 
 # as it would be mixed content. Without a registered domain name and SSL certificate the droplet
@@ -97,16 +102,6 @@ app.add_url_rule('/h_arch', 'h_arch', h_arch, methods=['POST'])
 app.add_url_rule('/lp_arch', 'lp_arch', lp_arch, methods=['POST'])
 app.add_url_rule('/dap_arch', 'dap_arch', dap_arch, methods=['POST'])
 app.add_url_rule('/ds_arch', 'ds_arch', ds_arch, methods=['POST'])
-
-
-# TODO may switch to websocket connection for backend with https://flask-socketio.readthedocs.io/en/latest/
-# Websocket endpoints:
-# Using websockets allows server to send messages, so clients do not have to continually poll for updates.
-# The updates that the server may need to send are:
-    # A player has joined a session,
-    # A player has left a session,
-    # And the session status changing (starting, round changing, ending)
-
 
 if __name__ == '__main__':
     app.run()

@@ -1,6 +1,6 @@
 # Contains endpoints for session actions
 
-import datetime
+from datetime import datetime
 import pyodbc 
 from dotenv import load_dotenv
 load_dotenv()
@@ -94,9 +94,11 @@ def endSession():
         
         # Update the end date of the session
         # TODO to use UTC date just put GETUTCDATE() in the query
+        newEndDate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute(f"UPDATE Session SET EndDate = ? WHERE JoinCode = ?", 
-            (datetime.today().strftime('%Y-%m-%d %H:%M:%S'), str(sessionId)))
-
+            (newEndDate, str(sessionId)))
+        conn.commit()
+        return jsonify({"success": True, "endDate": newEndDate})
     except Exception as e:
             print(e)
             return jsonify({"error": str(e)})
@@ -206,6 +208,106 @@ def finalResults():
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    
+
+# Endpoint to get results for for a Mechanical Arm Mission round rather than shoving results into session status
+def armRoundResults():
+    try:
+        # First check that required data is in request, must have valid sessionId
+        data = request.json
+        sessionId = data.get('sessionId')
+        round = data.get('round')
+
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+        
+        # Check that players exist with matching sessionId
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE SessionId = ?", (str(sessionId)))
+        players = cursor.fetchall()
+        if not players:
+            return jsonify({"error": "Players not found"})
+        
+        # Save array of all players in the session
+        # players = [
+        #     {"id": 1, "name": "Player 1", "color": "red", "weight": 50, "cost": 100, "solverOne": 0, "solverTwo": 2, "architecture": "Manipulator and Grabber" },
+        # ]
+        playerList = []
+        for player in players:
+            playerList.append({"id": player.Id, "name": player.Name, "color": player.Color})
+            # For each player, also save their scores, solvers, and architecture
+            cursor.execute(f"SELECT * FROM ArmRoundResult WHERE PlayerId = ? AND Round = ?", (str(player.Id), str(round)))
+            score = cursor.fetchone()
+            if score:
+                playerList[-1]["weight"] = score.Grams
+                playerList[-1]["cost"] = score.Cost
+                playerList[-1]["solverOne"] = getattr(score, 'SolverOne', None)
+                playerList[-1]["solverTwo"] = getattr(score, 'SolverTwo', None)
+                playerList[-1]["solverThree"] = getattr(score, 'SolverThree', None)
+                playerList[-1]["solverFour"] = getattr(score, 'SolverFour', None)
+                playerList[-1]["architecture"] = score.Architecture
+                playerList[-1]["score"] = score.Score
+
+        return jsonify({"success": True, "results": playerList})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+    
+# Get aggregate results of all mechanical arm mission rounds
+def armFinalResults():
+    try:
+        # First check that required data is in request, must have valid sessionId
+        data = request.json
+        sessionId = data.get('sessionId')
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+        
+        # Check that players exist with matching sessionId
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE SessionId = ?", (str(sessionId)))
+        players = cursor.fetchall()
+        if not players:
+            return jsonify({"error": "Players not found"})
+        
+        # Save array of all players in the session
+        playerList = []
+        for player in players:
+            playerList.append({"id": player.Id, "name": player.Name, "color": player.Color, "scores": []})
+            # For each player, also save their scores
+            cursor.execute(f"SELECT * FROM ArmRoundResult WHERE PlayerId = ?", (str(player.Id)))
+            scores = cursor.fetchall()
+            if scores:
+                for score in scores:
+                    playerList[-1]["scores"].append({"weight": score.Grams, "cost": score.Cost, "score": score.Score, "round": score.Round,
+                        "solverOne": getattr(score, 'SolverOne', False), "solverTwo": getattr(score, 'SolverTwo', False),
+                        "solverThree": getattr(score, 'SolverThree', False), "solverFour": getattr(score, 'SolverFour', False), 
+                        "architecture": score.Architecture})
+
+        return jsonify({"success": True, "results": playerList})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
 # get quantity of players that have finished the survey and quantity that are in the session
 def surveysSubmitted():

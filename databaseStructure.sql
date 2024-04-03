@@ -8,57 +8,6 @@ CREATE TABLE session (
     EndDate varchar(255),
 );
 
--- If there is only a value for SolverOne and not SolverTwo and SolverThree and if the round is 1 or 2 
--- then h_arch was used.
--- If there is only values for SolverOne and SolverTwo and not SolverThree and if the round is 3 then
--- lp_arch was used.
--- If there are values for SolverOne, SolverTwo, and SolverThree and if the round is 4 then dap_arch was used.
--- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
--- Round Result Table:
-CREATE TABLE RoundResult (
-    Id int IDENTITY(1,1) PRIMARY KEY,
-    Round int,
-    Shots int,
-    Cost int,
-    SolverOne int,
-    SolverTwo int,
-    SolverThree int,
-    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
-    Architecture varchar(20),
-    Score int
-);
-
--- Free Roam Result from expiremental playground
--- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
--- Modules are ints where 1 -> Drive, 2 -> Long, 3 -> Fairway, 4 -> Short, 5 -> Putt
-CREATE TABLE FreeRoamResult (
-    Id int IDENTITY(1,1) PRIMARY KEY,
-    Shots int,
-    Distance int,
-    Solver int,
-    Module int,
-    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
-)
-
--- Free Roam Survey Results for players to choose the best solver for each module.
--- The number stored per module is for a solver as an int that can represent multiple solvers as follows:
--- 1 -> Professional
--- 2 -> Amateur
--- 3 -> Specialist
--- 4 -> Professional and Amateur
--- 5 -> Professional and Specialist
--- 6 -> Amateur and Specialist
--- 7 -> Professional, Amateur, and Specialist (could be stored in 3 bits!)
-CREATE TABLE FreeRoamSurvey (
-    Id int IDENTITY(1,1) PRIMARY KEY,
-    Drive int,
-    Long int,
-    Fairway int,
-    Short int,
-    Putt int,
-    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
-)
-
 -- Player Brief Table:
 CREATE TABLE PlayerBrief (
     Id varchar(255) PRIMARY KEY,
@@ -103,4 +52,55 @@ CREATE TABLE PlayerInformation (
     OtherSpecializationName varchar(255),
     SystemsEngineeringExpertise int,
     StatementOfWorkExpertise int,
+)
+
+-- If there is only a value for SolverOne and not SolverTwo and SolverThree and if the round is 1 or 2 
+-- then h_arch was used.
+-- If there is only values for SolverOne and SolverTwo and not SolverThree and if the round is 3 then
+-- lp_arch was used.
+-- If there are values for SolverOne, SolverTwo, and SolverThree and if the round is 4 then dap_arch was used.
+-- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
+-- Round Result Table:
+CREATE TABLE RoundResult (
+    Id int IDENTITY(1,1) PRIMARY KEY,
+    Round int,
+    Shots int,
+    Cost int,
+    SolverOne int,
+    SolverTwo int,
+    SolverThree int,
+    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+    Architecture varchar(255),
+    Score int
+);
+
+-- Free Roam Result from expiremental playground
+-- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
+-- Modules are ints where 1 -> Drive, 2 -> Long, 3 -> Fairway, 4 -> Short, 5 -> Putt
+CREATE TABLE FreeRoamResult (
+    Id int IDENTITY(1,1) PRIMARY KEY,
+    Shots int,
+    Distance int,
+    Solver int,
+    Module int,
+    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+)
+
+-- Free Roam Survey Results for players to choose the best solver for each module.
+-- The number stored per module is for a solver as an int that can represent multiple solvers as follows:
+-- 1 -> Professional
+-- 2 -> Amateur
+-- 3 -> Specialist
+-- 4 -> Professional and Amateur
+-- 5 -> Professional and Specialist
+-- 6 -> Amateur and Specialist
+-- 7 -> Professional, Amateur, and Specialist (could be stored in 3 bits!)
+CREATE TABLE FreeRoamSurvey (
+    Id int IDENTITY(1,1) PRIMARY KEY,
+    Drive int,
+    Long int,
+    Fairway int,
+    Short int,
+    Putt int,
+    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
 )

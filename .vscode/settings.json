@@ -1,5 +1,7 @@
 {
     "appService.zipIgnorePattern": [
+        "armDatabaseStructure.sql",
+        "databaseStructure.sql",
         "__pycache__{,/**}",
         "*.py[cod]",
         "*$py.class",
@@ -30,6 +32,6 @@
         "venv.bak{,/**}",
         ".vscode{,/**}"
     ],
-    "appService.defaultWebAppToDeploy": "/subscriptions/cb2a267c-5c14-429d-984d-537aed044014/resourceGroups/Stse-game/providers/Microsoft.Web/sites/stse-backend",
+    "appService.defaultWebAppToDeploy": "/subscriptions/9b666e12-646c-490c-96e3-08fec8f6dc5a/resourceGroups/stselab-games/providers/Microsoft.Web/sites/stselab-games-backend",
     "appService.deploySubpath": "."
 }
