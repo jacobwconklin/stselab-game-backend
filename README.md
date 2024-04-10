@@ -51,6 +51,16 @@ source .venv/Scripts/activate
 flask --app app.py --debug run
 ```
 
+# Note about sensitive information:
+
+1) Do NOT push any API keys or database connection strings to GitHub, this application is in a public repository. 
+Use the .gitignore file to specify files you do not want to push to GitHub.
+
+2) Do NOT deploy any .sql files. Not sure why, but this has caused issues with the deployed server before. 
+Use .vscode/settings.json to specify files that will not be deployed to Azure. Also, environmentSecrets.py is set up 
+to hold sensitive information that is not wanted on GitHub but that IS needed for deployment. This was easier to access than
+.env files, so I used this system. It is essentially serving as a .env or .yaml file for deployment secrets.
+
 # Deploy a Python (Flask) web app to Azure App Service - Sample Application
 
 This is the sample Flask application for the Azure Quickstart [Deploy a Python (Django or Flask) web app to Azure App Service](https://docs.microsoft.com/en-us/azure/app-service/quickstart-python). For instructions on how to create the Azure resources and deploy the application to Azure, refer to the Quickstart article.

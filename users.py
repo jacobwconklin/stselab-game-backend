@@ -22,33 +22,28 @@ def host():
         participationReason = data.get('participationReason')
         gender = data.get('gender')
         age = data.get('age')
-        country = data.get('country')
-        hobbies = data.get('hobbies')
+
+        residence = data.get('residence')
+        ethnicity = data.get('ethnicity')
+
         isCollegeStudent = data.get('isCollegeStudent')
         university = data.get('university')
         degreeProgram = data.get('degreeProgram')
         yearsInProgram = data.get('yearsInProgram')
         highSchoolEducation = data.get('highSchoolEducation')
-        associatesEducation = data.get('associatesEducation')
         bachelorsEducation = data.get('bachelorsEducation')
         mastersEducation = data.get('mastersEducation')
-        professionalEducation = data.get('professionalEducation')
         doctorateEducation = data.get('doctorateEducation')
         otherEducation = data.get('otherEducation')
         otherEducationName = data.get('otherEducationName')
-        aerospaceEngineeringSpecialization = data.get('aerospaceEngineeringSpecialization')
-        designSpecialization = data.get('designSpecialization')
-        electricalEngineeringSpecialization = data.get('electricalEngineeringSpecialization')
-        industrialEngineeringSpecialization = data.get('industrialEngineeringSpecialization')
-        manufacturingSpecialization = data.get('manufacturingSpecialization')
-        materialScienceSpecialization = data.get('materialScienceSpecialization')
-        mechanicalEngineeringSpecialization = data.get('mechanicalEngineeringSpecialization')
-        projectManagementSpecialization = data.get('projectManagementSpecialization')
-        roboticsSpecialization = data.get('roboticsSpecialization')
-        softwareSpecialization = data.get('softwareSpecialization')
-        systemsEngineeringSpecialization = data.get('systemsEngineeringSpecialization')
-        otherSpecialization = data.get('otherSpecialization')
-        otherSpecializationName = data.get('otherSpecializationName')
+
+        riskAnalysisExperience = data.get('riskAnalysisExperience')
+        supplierExperience = data.get('supplierExperience')
+        proposalOrStatementOfWorkExperience = data.get('proposalOrStatementOfWorkExperience')
+        bidsForRequestsExperience = data.get('bidsForRequestsExperience')
+        systemArchitectureExperience = data.get('systemArchitectureExperience')
+        golfExperience = data.get('golfExperience')
+
         systemsEngineeringExpertise = data.get('systemsEngineeringExpertise')
         statementOfWorkExpertise = data.get('statementOfWorkExpertise')
 
@@ -83,22 +78,16 @@ def host():
         conn.commit()
 
         # Now create new extensive Player Information and save all information in the db with the same id
-        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Country, 
-                       Hobbies, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
-                       AssociatesEducation, BachelorsEducation, MastersEducation, ProfessionalEducation, 
-                       DoctorateEducation, OtherEducation, OtherEducationName, AerospaceEngineeringSpecialization,
-                       DesignSpecialization, ElectricalEngineeringSpecialization, IndustrialEngineeringSpecialization,
-                       ManufacturingSpecialization, MaterialScienceSpecialization, MechanicalEngineeringSpecialization,
-                       ProjectManagementSpecialization, RoboticsSpecialization, 
-                       SoftwareSpecialization, SystemsEngineeringSpecialization, OtherSpecialization, OtherSpecializationName,
-                       SystemsEngineeringExpertise, StatementOfWorkExpertise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
-            (playerId, name, participationReason, gender, age, country, hobbies, isCollegeStudent, university, degreeProgram,
-             yearsInProgram, highSchoolEducation, associatesEducation, bachelorsEducation, mastersEducation, professionalEducation,
-             doctorateEducation, otherEducation, otherEducationName, aerospaceEngineeringSpecialization, designSpecialization,
-             electricalEngineeringSpecialization, industrialEngineeringSpecialization, manufacturingSpecialization, materialScienceSpecialization,
-             mechanicalEngineeringSpecialization,  projectManagementSpecialization, roboticsSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
-             otherSpecializationName, systemsEngineeringExpertise, statementOfWorkExpertise))  
+        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Residence, 
+                        Ethnicity, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
+                        BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, 
+                        RiskAnalysisExperience, SupplierExperience, ProposalOrStatementOfWorkExperience, BidsForRequestsExperience,
+                        SystemArchitectureExperience, GolfExperience, SystemsEngineeringExpertise, StatementOfWorkExpertise) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+                (playerId, name, participationReason, gender, age, residence, ethnicity, isCollegeStudent, university, degreeProgram,
+                yearsInProgram, highSchoolEducation, bachelorsEducation, mastersEducation, doctorateEducation, otherEducation, otherEducationName, 
+                riskAnalysisExperience, supplierExperience, proposalOrStatementOfWorkExperience, bidsForRequestsExperience,
+                systemArchitectureExperience, golfExperience, systemsEngineeringExpertise, statementOfWorkExpertise))  
         conn.commit()
 
         # On success return success and join code
@@ -118,35 +107,31 @@ def join():
         participationReason = data.get('participationReason')
         gender = data.get('gender')
         age = data.get('age')
-        country = data.get('country')
-        hobbies = data.get('hobbies')
+
+        residence = data.get('residence')
+        ethnicity = data.get('ethnicity')
+
         isCollegeStudent = data.get('isCollegeStudent')
         university = data.get('university')
         degreeProgram = data.get('degreeProgram')
         yearsInProgram = data.get('yearsInProgram')
         highSchoolEducation = data.get('highSchoolEducation')
-        associatesEducation = data.get('associatesEducation')
         bachelorsEducation = data.get('bachelorsEducation')
         mastersEducation = data.get('mastersEducation')
-        professionalEducation = data.get('professionalEducation')
         doctorateEducation = data.get('doctorateEducation')
         otherEducation = data.get('otherEducation')
         otherEducationName = data.get('otherEducationName')
-        aerospaceEngineeringSpecialization = data.get('aerospaceEngineeringSpecialization')
-        designSpecialization = data.get('designSpecialization')
-        electricalEngineeringSpecialization = data.get('electricalEngineeringSpecialization')
-        industrialEngineeringSpecialization = data.get('industrialEngineeringSpecialization')
-        manufacturingSpecialization = data.get('manufacturingSpecialization')
-        materialScienceSpecialization = data.get('materialScienceSpecialization')
-        mechanicalEngineeringSpecialization = data.get('mechanicalEngineeringSpecialization')
-        projectManagementSpecialization = data.get('projectManagementSpecialization')
-        roboticsSpecialization = data.get('roboticsSpecialization')
-        softwareSpecialization = data.get('softwareSpecialization')
-        systemsEngineeringSpecialization = data.get('systemsEngineeringSpecialization')
-        otherSpecialization = data.get('otherSpecialization')
-        otherSpecializationName = data.get('otherSpecializationName')
+
+        riskAnalysisExperience = data.get('riskAnalysisExperience')
+        supplierExperience = data.get('supplierExperience')
+        proposalOrStatementOfWorkExperience = data.get('proposalOrStatementOfWorkExperience')
+        bidsForRequestsExperience = data.get('bidsForRequestsExperience')
+        systemArchitectureExperience = data.get('systemArchitectureExperience')
+        golfExperience = data.get('golfExperience')
+
         systemsEngineeringExpertise = data.get('systemsEngineeringExpertise')
         statementOfWorkExpertise = data.get('statementOfWorkExpertise')
+        
         joinCode = data.get('joinCode')
 
         # TODO return error if there are not required params
@@ -174,22 +159,17 @@ def join():
         conn.commit()
 
         # Now save extensive player information into the database
-        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Country, 
-                       Hobbies, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
-                       AssociatesEducation, BachelorsEducation, MastersEducation, ProfessionalEducation, 
-                       DoctorateEducation, OtherEducation, OtherEducationName, AerospaceEngineeringSpecialization,
-                       DesignSpecialization, ElectricalEngineeringSpecialization, IndustrialEngineeringSpecialization,
-                       ManufacturingSpecialization, MaterialScienceSpecialization, MechanicalEngineeringSpecialization,
-                       ProjectManagementSpecialization, RoboticsSpecialization, 
-                       SoftwareSpecialization, SystemsEngineeringSpecialization, OtherSpecialization, OtherSpecializationName,
-                       SystemsEngineeringExpertise, StatementOfWorkExpertise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
-            (playerId, name, participationReason, gender, age, country, hobbies, isCollegeStudent, university, degreeProgram,
-             yearsInProgram, highSchoolEducation, associatesEducation, bachelorsEducation, mastersEducation, professionalEducation,
-             doctorateEducation, otherEducation, otherEducationName, aerospaceEngineeringSpecialization, designSpecialization,
-             electricalEngineeringSpecialization, industrialEngineeringSpecialization, manufacturingSpecialization, materialScienceSpecialization,
-             mechanicalEngineeringSpecialization, projectManagementSpecialization, roboticsSpecialization, softwareSpecialization, systemsEngineeringSpecialization, otherSpecialization,
-             otherSpecializationName, systemsEngineeringExpertise, statementOfWorkExpertise))  
+        # Now create new extensive Player Information and save all information in the db with the same id
+        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Residence, 
+                        Ethnicity, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
+                        BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, 
+                        RiskAnalysisExperience, SupplierExperience, ProposalOrStatementOfWorkExperience, BidsForRequestsExperience,
+                        SystemArchitectureExperience, GolfExperience, SystemsEngineeringExpertise, StatementOfWorkExpertise) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+                (playerId, name, participationReason, gender, age, residence, ethnicity, isCollegeStudent, university, degreeProgram,
+                yearsInProgram, highSchoolEducation, bachelorsEducation, mastersEducation, doctorateEducation, otherEducation, otherEducationName, 
+                riskAnalysisExperience, supplierExperience, proposalOrStatementOfWorkExperience, bidsForRequestsExperience,
+                systemArchitectureExperience, golfExperience, systemsEngineeringExpertise, statementOfWorkExpertise))  
         conn.commit()
 
         return jsonify({"success": True, "playerId": playerId})
@@ -415,3 +395,58 @@ def freeRoamSurvey():
         print(e)
         return jsonify({"error": str(e)})
     
+
+# Save result of player playing onboarding or offboarding dice game
+def diceResult():
+    try:
+        # First check that required data is in request, must have valid Id for Player,
+        # as well as required Die, whether it is onboarding, and the score.
+        data = request.json
+        id = data.get('playerId')
+        score = data.get('score')
+        onboarding = data.get('onboarding')
+        d6 = data.get('d6')
+        d8 = data.get('d8')
+        d10 = data.get('d10')
+        d12 = data.get('d12')
+        d20 = data.get('d20')
+
+        if d6 is None:
+            d6 = 0
+        if d8 is None:
+            d8 = 0
+        if d10 is None:
+            d10 = 0
+        if d12 is None:
+            d12 = 0
+        if d20 is None:
+            d20 = 0
+
+        # D6 int,
+        # D8 int,
+        # D10 int, -- TODO get exact dice values
+        # D12 int,
+        # D20 int,
+        # PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+        # Onboarding bit,
+        # Score int
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+
+        # Check that player exists
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        player = cursor.fetchone()
+        if player is None:
+            return jsonify({"error": "Player not found"})
+
+        # Now create new DiceResult and insert into its table
+        cursor.execute(f"INSERT INTO DiceResult (D6, D8, D10, D12, D20, PlayerId, Onboarding, Score) VALUES  (?, ?, ?, ?, ?, ?, ?, ?)", 
+                       (str(d6), str(d8), str(d10), str(d12), str(d20), str(id), str(onboarding), str(score))) 
+        conn.commit()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})

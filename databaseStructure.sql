@@ -23,33 +23,29 @@ CREATE TABLE PlayerInformation (
     ParticipationReason varchar(255),
     Gender varchar(255),
     Age int,
-    Country varchar(255),
-    Hobbies varchar(255),
+    Residence varchar(255), -- Changed from country to Residence
+    Ethnicity varchar(255), -- Deleted Hobbies and added Ethnicity (taken from Stanford: https://idealdeisurvey.stanford.edu/frequently-asked-questions/survey-definitions)
     IsCollegeStudent bit,
     University varchar(255),
     DegreeProgram varchar(255),
     YearsInProgram int,
+    -- each education field will now be prefaced with "yes" or "current" to tell if person is actively a student or not.
+    -- removed associates and proffesional educations
     HighSchoolEducation varchar(255),
-    AssociatesEducation varchar(255),
     BachelorsEducation varchar(255),
-    MastersEducation varchar(255),
-    ProfessionalEducation varchar(255),
+    MastersEducation varchar(255), 
     DoctorateEducation varchar(255),
     OtherEducation varchar(255),
     OtherEducationName varchar(255),
-    AerospaceEngineeringSpecialization varchar(255),
-    DesignSpecialization varchar(255),
-    ElectricalEngineeringSpecialization varchar(255),
-    IndustrialEngineeringSpecialization varchar(255),
-    ManufacturingSpecialization varchar(255),
-    MaterialScienceSpecialization varchar(255),
-    MechanicalEngineeringSpecialization varchar(255),
-    ProjectManagementSpecialization varchar(255),
-    RoboticsSpecialization varchar (255),
-    SoftwareSpecialization varchar(255),
-    SystemsEngineeringSpecialization varchar(255),
-    OtherSpecialization varchar(255),
-    OtherSpecializationName varchar(255),
+
+    -- Removed specializations and added new 7 point experience questions:
+    RiskAnalysisExperience int,
+    SupplierExperience int,
+    ProposalOrStatementOfWorkExperience int,
+    bidsForRequestsExperience int,
+    systemArchitectureExperience int,
+    golfExperience int,
+
     SystemsEngineeringExpertise int,
     StatementOfWorkExpertise int,
 )
@@ -103,4 +99,19 @@ CREATE TABLE FreeRoamSurvey (
     Short int,
     Putt int,
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+)
+
+-- Saves results of D&D inspired dice picking for Onboarding and Offboarding game
+-- Save number of each kind of dice, save playerID, save if it was Onboarding or Offboarding, 
+-- and save their score (probability of rolling 12 0r 20)
+CREATE TABLE DiceResult (
+    Id int IDENTITY(1,1) PRIMARY KEY,
+    D6 int,
+    D8 int,
+    D10 int, -- TODO get exact dice values
+    D12 int,
+    D20 int,
+    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+    Onboarding bit,
+    Score DECIMAL(4,2) 
 )

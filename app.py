@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import requests
-from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults, armRoundResult
+from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults, armRoundResult, diceResult
 from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 from flask import (Flask, redirect, render_template, request,
@@ -84,6 +84,7 @@ app.add_url_rule('/player/roundResult', 'player/roundResult', roundResult, metho
 app.add_url_rule('/player/remove', 'player/remove', remove, methods=['POST'])
 app.add_url_rule('/player/freeRoamResult', 'player/freeRoamResult', freeRoamResult, methods=['POST'])
 app.add_url_rule('/player/freeRoamSurvey', 'player/freeRoamSurvey', freeRoamSurvey, methods=['POST'])
+app.add_url_rule('/player/diceResult', 'player/diceResult', diceResult, methods=['POST'])
 app.add_url_rule('/player/allResults', 'player/allResults', allResults, methods=['GET'])
 # Mechanical Arm Mission:
 app.add_url_rule('/player/armRoundResult', 'player/armRoundResult', armRoundResult, methods=['POST'])
