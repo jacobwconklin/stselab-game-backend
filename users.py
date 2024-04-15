@@ -147,8 +147,9 @@ def join():
             return jsonify({"error": "Session not found"})
         
         # Check that session hasn't already started (Should still be on round 0)
-        if session.Round != 0:
-            return jsonify({"error": "Session has already started"})
+        # TODO currently allow players to join a started session, just comment out the code below to prevent that:
+        # if session.Round != 0:
+        #     return jsonify({"error": "Session has already started"})
 
         # Generate UUID for player
         playerId = uuid.uuid4()
@@ -223,6 +224,9 @@ def roundResult():
         architecture = data.get('architecture')
         round = data.get('round')
         score = data.get('score')
+        customPerformanceWeight = data.get('customPerformanceWeight')
+        reasoning = data.get('reasoning')
+
         # if score is none save it as -1
         if score is None:
             score = -1
@@ -242,8 +246,8 @@ def roundResult():
         # So space is reserved for 3 solvers for each round result but value may be None / Null
 
         # Now create new Round Result and insert into its table
-        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture, Score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                       (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id), architecture, str(score)))  
+        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture, Score, CustomPerformanceWeight, Reasoning) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+            (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id), architecture, str(score), customPerformanceWeight, str(reasoning)))  
         conn.commit()
 
         return jsonify({"success": True})
@@ -311,7 +315,7 @@ def allResults():
         # json_string = json.dumps(results, default=str)
         resultList = []
         for result in results:
-            resultList.append({"id": result.Id, "name": result.Name, "color": result.Color, "score": result.Score, "round": result.Round, "shots": result.Shots, "cost": result.Cost, "solverOne": result.SolverOne, "solverTwo": result.SolverTwo, "solverThree": result.SolverThree, "architecture": result.Architecture})
+            resultList.append({"id": result.Id, "name": result.Name, "color": result.Color, "score": result.Score, "round": result.Round, "shots": result.Shots, "cost": result.Cost, "solverOne": result.SolverOne, "solverTwo": result.SolverTwo, "solverThree": result.SolverThree, "architecture": result.Architecture, "customPerformanceWeight": result.CustomPerformanceWeight})
 
         # Now return all results
         return  jsonify({"results": resultList})
@@ -374,6 +378,7 @@ def freeRoamSurvey():
         fairway = data.get('fairway')
         short = data.get('short')
         putt = data.get('putt')
+        entireHole = data.get('entireHole')
 
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
@@ -386,8 +391,8 @@ def freeRoamSurvey():
             return jsonify({"error": "Player not found"})
 
         # Now create new Free Roam Result and insert into its table
-        cursor.execute(f"INSERT INTO FreeRoamSurvey (Drive, Long, Fairway, Short, Putt, PlayerId) VALUES (?, ?, ?, ?, ?, ?)", 
-                       (str(drive), str(long), str(fairway), str(short), str(putt), str(id)))  
+        cursor.execute(f"INSERT INTO FreeRoamSurvey (Drive, Long, Fairway, Short, Putt, EntireHole, PlayerId) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                       (str(drive), str(long), str(fairway), str(short), str(putt), str(entireHole), str(id)))  
         conn.commit()
 
         return jsonify({"success": True})
@@ -410,6 +415,7 @@ def diceResult():
         d10 = data.get('d10')
         d12 = data.get('d12')
         d20 = data.get('d20')
+        reasoning = data.get('reasoning')
 
         if d6 is None:
             d6 = 0
@@ -442,8 +448,8 @@ def diceResult():
             return jsonify({"error": "Player not found"})
 
         # Now create new DiceResult and insert into its table
-        cursor.execute(f"INSERT INTO DiceResult (D6, D8, D10, D12, D20, PlayerId, Onboarding, Score) VALUES  (?, ?, ?, ?, ?, ?, ?, ?)", 
-                       (str(d6), str(d8), str(d10), str(d12), str(d20), str(id), str(onboarding), str(score))) 
+        cursor.execute(f"INSERT INTO DiceResult (D6, D8, D10, D12, D20, PlayerId, Onboarding, Score, Reasoning) VALUES  (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                       (str(d6), str(d8), str(d10), str(d12), str(d20), str(id), str(onboarding), str(score), str(reasoning))) 
         conn.commit()
 
         return jsonify({"success": True})

@@ -66,10 +66,16 @@ def playersInSession():
         
         # Save array of all players in the session
         playerList = []
+        completedOnboarding = []
         for player in players:
             playerList.append({"id": player.Id, "name": player.Name, "color": player.Color})
+            # Check for players that have finished the onboarding Dice game
+            cursor.execute(f"SELECT * FROM DiceResult WHERE PlayerId = ?", (str(player.Id)))
+            session = cursor.fetchone()
+            if session:
+                completedOnboarding.append(str(player.Id))
 
-        return jsonify({"success": True, "players": playerList})
+        return jsonify({"success": True, "players": playerList, "completedOnboarding": completedOnboarding})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
@@ -168,6 +174,7 @@ def roundResults():
                 playerList[-1]["solverThree"] = getattr(score, 'SolverThree', None)
                 playerList[-1]["architecture"] = score.Architecture
                 playerList[-1]["score"] = score.Score
+                playerList[-1]["customPerformanceWeight"] = getattr(score, 'CustomPerformanceWeight', None)
 
         return jsonify({"success": True, "results": playerList})
     except Exception as e:

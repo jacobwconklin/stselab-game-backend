@@ -56,6 +56,9 @@ CREATE TABLE PlayerInformation (
 -- lp_arch was used.
 -- If there are values for SolverOne, SolverTwo, and SolverThree and if the round is 4 then dap_arch was used.
 -- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
+-- Custom Performance Weight is an int between 20 and 80 that represents the percent of the score that is 
+-- associated with performance. 100 - Custom Performance Weight is the percent of the score that is associated 
+-- with cost. This value is chosen by the player
 -- Round Result Table:
 CREATE TABLE RoundResult (
     Id int IDENTITY(1,1) PRIMARY KEY,
@@ -67,7 +70,9 @@ CREATE TABLE RoundResult (
     SolverThree int,
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
     Architecture varchar(255),
-    Score int
+    Score int,
+    CustomPerformanceWeight int,
+    Reasoning varchar(255),
 );
 
 -- Free Roam Result from expiremental playground
@@ -98,6 +103,7 @@ CREATE TABLE FreeRoamSurvey (
     Fairway int,
     Short int,
     Putt int,
+    EntireHole int,
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
 )
 
@@ -113,5 +119,6 @@ CREATE TABLE DiceResult (
     D20 int,
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
     Onboarding bit,
-    Score DECIMAL(4,2) 
+    Score DECIMAL(4,2),
+    Reasoning varchar(255),
 )
