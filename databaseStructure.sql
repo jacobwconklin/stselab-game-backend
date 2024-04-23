@@ -122,3 +122,16 @@ CREATE TABLE DiceResult (
     Score DECIMAL(4,2),
     Reasoning varchar(255),
 )
+
+-- Queries for saving csv files beyond selecting all per table:
+
+-- Gives player details, survey choices, and dice results for a given session
+SELECT PlayerInformation.*, FreeRoamSurvey.*, DiceResult.* FROM (((PlayerInformation
+Inner Join FreeRoamSurvey ON PlayerInformation.Id = FreeRoamSurvey.PlayerId )
+INNER JOIN DiceResult ON PlayerInformation.Id = DiceResult.PlayerId)
+INNER JOIN PlayerBrief ON PlayerInformation.Id = PlayerBrief.Id) WHERE PlayerBrief.SessionId = SESSION-ID-HERE 
+
+-- Gives player details and round results for all tournament stages for a given session
+SELECT PlayerInformation.*, RoundResult.* FROM ((PlayerInformation
+INNER JOIN RoundResult ON PlayerInformation.Id = RoundResult.PlayerId )
+INNER JOIN PlayerBrief ON PlayerInformation.Id = PlayerBrief.Id) WHERE PlayerBrief.SessionId = SESSION-ID-HERE AND RoundResult.Round >= 6

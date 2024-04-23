@@ -68,12 +68,15 @@ def playersInSession():
         playerList = []
         completedOnboarding = []
         for player in players:
-            playerList.append({"id": player.Id, "name": player.Name, "color": player.Color})
             # Check for players that have finished the onboarding Dice game
             cursor.execute(f"SELECT * FROM DiceResult WHERE PlayerId = ?", (str(player.Id)))
-            session = cursor.fetchone()
-            if session:
+            diceResult = cursor.fetchone()
+            didCompleteOnboarding = False
+            if diceResult:
                 completedOnboarding.append(str(player.Id))
+                didCompleteOnboarding = True
+            # Save player information
+            playerList.append({"id": player.Id, "name": player.Name, "color": player.Color, "completedOnboarding": didCompleteOnboarding})
 
         return jsonify({"success": True, "players": playerList, "completedOnboarding": completedOnboarding})
     except Exception as e:

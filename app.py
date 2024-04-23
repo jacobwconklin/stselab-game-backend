@@ -38,6 +38,47 @@ def hello():
        print('Request for hello page received with no name or blank name -- redirecting')
        return redirect(url_for('index'))
    
+
+# Saves all data from a given session to a local file
+# Only uncomment this out to run on local machine, do not use in production, as files would just get saved to the server and be 
+# un-retrievable by a user. 
+@app.route('/saveSession', methods=['POST'])
+def saveSession():
+    try:
+        # First check that required data is in request, must have valid sessionId
+        data = request.json
+        sessionId = data.get('sessionId')
+
+        # Create connection to Azure SQL Database
+        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
+        cursor = conn.cursor()
+        
+        # Check that players exist with matching sessionId
+        cursor.execute(f"SELECT * FROM PlayerBrief WHERE SessionId = ?", (str(sessionId)))
+        players = cursor.fetchall()
+        if not players:
+            return jsonify({"error": "Players not found"})
+        
+        # Save array of all players in the session
+        playerList = []
+        for player in players:
+            playerList.append({"id": player.Id, "name": player.Name, "color": player.Color, "scores": []})
+            # For each player, also save their scores
+            cursor.execute(f"SELECT * FROM RoundResult WHERE PlayerId = ? AND Round > 5", (str(player.Id)))
+            scores = cursor.fetchall()
+            if scores:
+                for score in scores:
+                    playerList[-1]["scores"].append({"shots": score.Shots, "cost": score.Cost, "score": score.Score, "round": score.Round,
+                        "solverOne": getattr(score, 'SolverOne', False), "solverTwo": getattr(score, 'SolverTwo', False),
+                        "solverThree": getattr(score, 'SolverThree', False), "architecture": score.Architecture})
+        
+        with open(str(sessionId) + '-session-data.json', 'w') as f:
+            json.dump(data, f)
+        return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+   
 # All real methods to be used by application:
     
 # Needed endpoints:
