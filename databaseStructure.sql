@@ -4,8 +4,8 @@
 CREATE TABLE session (
     JoinCode int PRIMARY KEY,
     Round int NULL,
-    StartDate varchar(255),
-    EndDate varchar(255),
+    StartDate datetime,
+    EndDate datetime,
 );
 
 -- Player Brief Table:
@@ -114,7 +114,7 @@ CREATE TABLE DiceResult (
     Id int IDENTITY(1,1) PRIMARY KEY,
     D6 int,
     D8 int,
-    D10 int, -- TODO get exact dice values
+    D10 int,
     D12 int,
     D20 int,
     PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),

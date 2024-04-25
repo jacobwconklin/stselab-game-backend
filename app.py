@@ -90,10 +90,6 @@ def saveSession():
     # end tournament (for hosts) OR maybe don't allow them to end early as it could make data collection weirder?
     # begin round (for hosts)
     # end round (for hosts) - may need to forcibly close rounds even if players aren't done
-        # TODO work on session dates, make them actual UTC timestamps, and switch to using startDate to be when the tournament has started
-        # So that no players can join a session partly through. Then use the endDate so that the front-end polling the session can know
-        # when the session is over. Also use round to tell what round the session is on (or could just make round 0 and round 4 represent
-        # start and end time and not need those fields, but may be nice to have when the sessions actually happened). 
     # record hole result (for all)
         # TODO BE serves as a path to hit Plumber R code as it is over http, could have backend directly save results rather than FE making a second call to BE to save them.
         # Such as round #, solvers, etc, and will call R then record hole, otherwise just save results from FE

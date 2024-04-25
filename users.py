@@ -47,7 +47,10 @@ def host():
         systemsEngineeringExpertise = data.get('systemsEngineeringExpertise')
         statementOfWorkExpertise = data.get('statementOfWorkExpertise')
 
-        # TODO return error if there are not required params
+        
+        # return error if required params aren't present
+        if name is None or color is None:
+            return jsonify({"error": "Missing required parameters"})
 
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
@@ -65,8 +68,9 @@ def host():
                 joinCode = random.randint(100000, 999999)
 
         # Insert new session into database
-        cursor.execute(f"INSERT INTO Session (JoinCode, Round, StartDate, EndDate) VALUES (?, 0, ?, ?)",
-            (str(joinCode), datetime.today().strftime('%Y-%m-%d %H:%M:%S'), 'None'))
+        # Now using UTC date, previously used: datetime.today().strftime('%Y-%m-%d %H:%M:%S') as a varchar
+        cursor.execute(f"INSERT INTO Session (JoinCode, Round, StartDate, EndDate) VALUES (?, 0, GETUTCDATE(), ?)",
+            (str(joinCode), None))
         conn.commit()
 
         # Generate UUID for player
@@ -134,7 +138,9 @@ def join():
         
         joinCode = data.get('joinCode')
 
-        # TODO return error if there are not required params
+        # return error if required params aren't present
+        if name is None or color is None or joinCode is None:
+            return jsonify({"error": "Missing required parameters"})
 
         # Create connection to Azure SQL Database
         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
@@ -146,8 +152,8 @@ def join():
         if session is None:
             return jsonify({"error": "Session not found"})
         
-        # Check that session hasn't already started (Should still be on round 0)
-        # TODO currently allow players to join a started session, just comment out the code below to prevent that:
+        # Below code would check that session hasn't already started (Should still be on round 0)
+        # Currently allow players to join 'late' to a started session, just comment out the code below to prevent that:
         # if session.Round != 0:
         #     return jsonify({"error": "Session has already started"})
 
@@ -180,9 +186,8 @@ def join():
     
 
 # Removes a player from a session, called by the host to remove them or the player themselves to leave
-# TODO must decide if it should delete the player data from the database (and all reliant round results) 
-# or just change the session id to null. Will start with just changing session id so data remains in db
-# for aggregate results.
+# Will start with just changing session id so data remains in db for aggregate results (as they only appear after reaching tournament stages)
+# but can be changed to remove player data from the database (and all reliant round results in recursive delete) if desired.
 def remove():
     try:
         # First check that required data is in request, must have valid playerId
@@ -430,7 +435,7 @@ def diceResult():
 
         # D6 int,
         # D8 int,
-        # D10 int, -- TODO get exact dice values
+        # D10 int, 
         # D12 int,
         # D20 int,
         # PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),

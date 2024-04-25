@@ -7,8 +7,7 @@ load_dotenv()
 from flask import (request, jsonify)
 from environmentSecrets import AZURE_SQL_CONNECTION_STRING
 
-# Status a session, getting back the round the session is on only.
-# TODO may want to send start and end time if relevant
+# Status a session, getting back the round the session is on, and the start and end dates of the session.
 # This will be called repeatedly by polling front-end, and so switching to websockets would reduce the work
 # needed to be done by the server.
 # Even though this endpoint is always polled, it only retreives round number so minimal work is required by BE here.
@@ -102,12 +101,11 @@ def endSession():
             return jsonify({"error": "Session not found"})
         
         # Update the end date of the session
-        # TODO to use UTC date just put GETUTCDATE() in the query
-        newEndDate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute(f"UPDATE Session SET EndDate = ? WHERE JoinCode = ?", 
-            (newEndDate, str(sessionId)))
+        # Uses UTC date by putting GETUTCDATE() in the query
+        cursor.execute(f"UPDATE Session SET EndDate = GETUTCDATE() WHERE JoinCode = ?", 
+            (str(sessionId)))
         conn.commit()
-        return jsonify({"success": True, "endDate": newEndDate})
+        return jsonify({"success": True})
     except Exception as e:
             print(e)
             return jsonify({"error": str(e)})
