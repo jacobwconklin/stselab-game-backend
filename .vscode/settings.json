@@ -2,6 +2,8 @@
     "appService.zipIgnorePattern": [
         "armDatabaseStructure.sql",
         "databaseStructure.sql",
+        "designProcess.sql",
+        "*.sql",
         "__pycache__{,/**}",
         "*.py[cod]",
         "*$py.class",

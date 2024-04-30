@@ -1,4 +1,5 @@
 import os
+import pyodbc
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -9,7 +10,7 @@ from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
 from flask_cors import CORS
-from environmentSecrets import AZURE_SQL_CONNECTION_STRING
+
 
 app = Flask(__name__)
 CORS(app)
@@ -20,8 +21,11 @@ users = [] # May still be usefulf for watching and printing data in compared to 
 
 @app.route('/')
 def index():
-   print('Request for index page received')
-   return render_template('index.html')
+    print('Request for index page received')
+    return render_template('index.html')
+
+@app.route('/testdb')
+
 
 @app.route('/favicon.ico')
 def favicon():
