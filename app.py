@@ -6,11 +6,13 @@ load_dotenv()
 import requests
 from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults, armRoundResult, diceResult
 from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults
+from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
 from flask_cors import CORS
 
+# TODO prevent SQL injections (probably regex on sql strings)
 
 app = Flask(__name__)
 CORS(app)
@@ -144,6 +146,15 @@ app.add_url_rule('/h_arch', 'h_arch', h_arch, methods=['POST'])
 app.add_url_rule('/lp_arch', 'lp_arch', lp_arch, methods=['POST'])
 app.add_url_rule('/dap_arch', 'dap_arch', dap_arch, methods=['POST'])
 app.add_url_rule('/ds_arch', 'ds_arch', ds_arch, methods=['POST'])
+
+
+# For Navy Design Process Project:
+app.add_url_rule('/navydp/saveNewUser', 'saveNewUser', saveNewUser, methods=['POST'])
+app.add_url_rule('/navydp/saveNewMeasurementPeriod', 'saveNewMeasurementPeriod', saveNewMeasurementPeriod, methods=['POST'])
+app.add_url_rule('/navydp/checkLogin', 'checkLogin', checkLogin, methods=['POST'])
+app.add_url_rule('/navydp/getAllActivityRecords', 'getAllActivityRecords', getAllActivityRecords, methods=['GET'])
+app.add_url_rule('/navydp/getActivityRecordsForPeriod', 'getActivityRecordsForPeriod', getActivityRecordsForPeriod, methods=['POST'])
+app.add_url_rule('/navydp/getAllMeasurementPeriods', 'getAllMeasurementPeriods', getAllMeasurementPeriods, methods=['GET']) 
 
 if __name__ == '__main__':
     app.run()

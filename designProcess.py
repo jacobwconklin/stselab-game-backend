@@ -2,6 +2,7 @@ from flask import jsonify, request
 from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT
 import pymysql
 import pymysql.cursors
+import hashlib
 
 db = pymysql.connections.Connection(
     host=VT_MYSQL_HOST,
@@ -10,6 +11,14 @@ db = pymysql.connections.Connection(
     database=VT_MYSQL_DB,
     port=VT_MYSQL_PORT
 )
+
+# helper function to hash and salt passwords
+def hashPassword(password):
+    salt = "STSE-SALT-Vamolaentao"
+    combinedString = salt + password
+    encoded = combinedString.encode()
+    hashResult = hashlib.sha512( encoded ).hexdigest()
+    return str(hashResult)
 
 # write personal info to db (hash and salt pw)
 def saveNewUser():
@@ -56,76 +65,116 @@ def saveNewUser():
         projectContextFamiliarity = data.get('projectContextFamiliarity')
         navyPlatformFamiliarity = data.get('navyPlatformFamiliarity')
         designChangeCharacteristicsFamiliarity = data.get('designChangeCharacteristicsFamiliarity')
-
+        
+        # Create connection to VT MySQL Database
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
-        # Save information about session itself
-        cursor.execute(f"SELECT * FROM Activity")
+        sqlString = f"INSERT INTO User (Email, Password, Gender, Age, Ethnicity, Employer, Team, Title, BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, AerodynamicsSpecialization, ComputerScienceSpecialization, ElectricalEngineeringSpecialization, ElectromagneticsSpecialization, EnvironmentalTestingSpecialization, LogisticsSpecialization, ManufacturingSpecialization, MechanicalDesignSpecialization, OperationsResearchSpecialization, ProjectManagementSpecialization, SystemsEngineeringSpecialization, StructuralAnalysisSpecialization, ThreatAnalysisSpecialization, OtherSpecializationName, OtherSpecialization, ShipyardAgency, NavseaAgency, NswcDahlgrenAgency, NswcCarderockAgency, OpnavAgency, PentagonAgency, OtherNswcAgencyName, OtherAgency, RiskAnalysisExperience, SupplierExperience, ProjectContextFamiliarity, NavyPlatformFamiliarity, DesignChangeCharacteristicsFamiliarity ) VALUES ('{email}', '{hashPassword(password)}', '{gender}', '{age}', '{ethnicity}', '{employer}', '{team}', '{title}', '{bachelorsEducation}', '{mastersEducation}', '{doctorateEducation}', '{otherEducation}', '{otherEducationName}', '{aerodynamicsSpecialization}', '{computerScienceSpecialization}', '{electricalEngineeringSpecialization}', '{electromagneticsSpecialization}', '{environmentalTestingSpecialization}', '{logisticsSpecialization}', '{manufacturingSpecialization}', '{mechanicalDesignSpecialization}', '{operationsResearchSpecialization}', '{projectManagementSpecialization}', '{systemsEngineeringSpecialization}', '{structuralAnalysisSpecialization}', '{threatAnalysisSpecialization}', '{otherSpecializationName}', '{otherSpecialization}', '{shipyardAgency}', '{navseaAgency}', '{nswcDahlgrenAgency}', '{nswcCarderockAgency}', '{opnavAgency}', '{pentagonAgency}', '{otherNswcAgencyName}', '{otherAgency}', '{riskAnalysisExperience}', '{supplierExperience}', '{projectContextFamiliarity}', '{navyPlatformFamiliarity}', '{designChangeCharacteristicsFamiliarity}')"
+        cursor.execute(sqlString)
 
-        activities = cursor.fetchall()
-        print(activities)
-        activitiesFound = []
-        if activities is None:
-            return jsonify({"error": "Session not found"})
-        else: 
-            for activity in activities:
-                activitiesFound.append(activity)
+        db.commit()
 
-        return jsonify({"success": True, "activities found:": activitiesFound})
+        return jsonify({"success": True})
 
     except Exception as e:
         print(e)
         return jsonify({"success": False, "exception": str(e)})
-    
+
 # write a set of records to db under one measurement period
 def saveNewMeasurementPeriod():
     try:
         data = request.json
-        id = data.get('playerId')
-        shots = data.get('shots')
-        cost = data.get('cost')
-        solverOne = data.get('solverOne')
-        solverTwo = data.get('solverTwo')
-        solverThree = data.get('solverThree')
-        architecture = data.get('architecture')
-        round = data.get('round')
-        score = data.get('score')
-        customPerformanceWeight = data.get('customPerformanceWeight')
-        reasoning = data.get('reasoning')
-
-        # if score is none save it as -1
-        if score is None:
-            score = -1
+        activities = data.get('activities')
+        email = data.get('email')
+        startDate = data.get('startDate')
+        endDate = data.get('endDate')
+        entered = data.get('entered')
 
         # Create connection to VT MySQL Database
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
-        # Check that player exists
-        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
-        player = cursor.fetchone()
-        if player is None:
-            return jsonify({"error": "Player not found"})
+        # Check that user exists
+        # cursor.execute(f"SELECT * FROM User WHERE email = ?", (str(email)))
+        # user = cursor.fetchone()
+        # if user is None:
+        #     return jsonify({"error": "User not found"})
         
-        # solver types: quantity is dependent on round number, there may be 1 (rounds 1 and 2), 
-        # 2 (round 3), or 3 (round 4)
-        # So space is reserved for 3 solvers for each round result but value may be None / Null
+        # Now create new Measurement Period and insert into its table
+        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}')"
+        cursor.execute(sqlString) 
+        db.commit()
+            
+        # need to get id of measurement period to insert into activity record
+        sqlString = "SELECT LAST_INSERT_ID()"
+        cursor.execute(sqlString)
+        newMeasurementPeriod = cursor.fetchone()
+        db.commit()
 
-        # Now create new Round Result and insert into its table
-        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture, Score, CustomPerformanceWeight, Reasoning) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-            (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id), architecture, str(score), customPerformanceWeight, str(reasoning)))  
-        conn.commit()
+        numberOfActivities = 0
+        for activity in activities:
+            print("in an activity")
+            sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, pointScale) VALUES ('{newMeasurementPeriod['LAST_INSERT_ID()']}', '{activity['type']}', '{activity['duration']}', '{activity['question1']}', '{activity['question2']}', '{activity['question3']}', {activity['pointScale']})"
+            print(sqlString)
+            cursor.execute(sqlString)
+            db.commit()
+            numberOfActivities += 1
 
-
-
-
-        return jsonify({"success": True, "activities found:": activitiesFound})
+        return jsonify({"success": True, "number-of-activities": numberOfActivities})
 
     except Exception as e:
         print(e)
         return jsonify({"success": False, "exception": str(e)})
 
-# retreive all records from db
+# retreive all activity records from db
+def getAllActivityRecords():
+    try:
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(f"SELECT * FROM ActivityRecord")
+        records = cursor.fetchall()
+        return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})
+    
+# retreive all activity records from db
+def getActivityRecordsForPeriod():
+    try:
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = ?", (request.json.get('measurementPeriod')))
+        records = cursor.fetchall()
+        return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})
+    
+# retreive all measurement periods from db
+def getAllMeasurementPeriods():
+    try:
+        print("Entered try")
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(f"SELECT * FROM MeasurementPeriod")
+        records = cursor.fetchall()
+        return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})
 
 # check login matches 
+def checkLogin():
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        sqlString = f"SELECT * FROM User WHERE Email = '{email}' AND Password = '{hashPassword(password)}'"
+        cursor.execute(sqlString)
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"success": False, "error": "User not found"})
+        return jsonify({"success": True}) # TODO figure out if creating / adding a token here? 
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})
 
 # TODO reset pw
