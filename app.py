@@ -28,6 +28,16 @@ def index():
 
 @app.route('/testdb')
 
+# Health check
+@app.route('/health')
+def health():
+    try:
+        # TODO can verify database connection here (and any other dependencies)  
+        return jsonify({'status': 'healthy'}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+
 
 @app.route('/favicon.ico')
 def favicon():
@@ -43,6 +53,16 @@ def hello():
    else:
        print('Request for hello page received with no name or blank name -- redirecting')
        return redirect(url_for('index'))
+   
+# TODO - to be used for resetting passwords, currently testing sending emails from flask apps:
+@app.route('/sendEmail', methods=['GET'])
+def sendEmail():
+    try:
+        # Send test email
+        return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
    
 # TODO: Function to save data from a session, potentially with different settings for what to include (currently manually pulling and saving csv's from Azure) 
 # Saves all data from a given session to a local file
