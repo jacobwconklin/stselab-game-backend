@@ -10,9 +10,19 @@ Denotes code to run on bash terminal (not sure if adjustments needed for Windows
 
 ## First time:
 1) Create file in the same level as app.py named 'environmentSecrets.py'.
-In this file add the line: AZURE_SQL_CONNECTION_STRING = 'database connection string'
-where database connection 
-
+In this file add the following lines: 
+AZURE_SQL_CONNECTION_STRING = 'database connection string'
+    where database connection string connects to stselab-games-data Azure SQL Database
+VT_MYSQL_HOST = 'host ip address'
+    where host ip address is the ip of the VT MySQL server
+VT_MYSQL_PORT = 'port number'
+    where port number is the port number of the VT MySQL server
+VT_MYSQL_DB = 'database name'
+    where database name is the name of the VT MySQL database
+VT_MYSQL_USER = 'database username'
+    where database username is the username for the VT MySQL database
+VT_MYSQL_PASSWORD = 'database password'
+    where database password is the password for the VT MySQL database
 
 2) Install Python if not already installed on machine
 

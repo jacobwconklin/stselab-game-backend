@@ -15,7 +15,7 @@ def hashPassword(password):
 
 # Function to prevent SQL injection attacks
 def sanitizeInput(input):
-    return input.replace("'", "''").replace(";", "").replace("--", "- -")
+    return str(input).replace("'", "''").replace(";", "").replace("--", "- -")
 
 # Sanitize the entire incoming JSON
 def sanitizeJson(json):
@@ -132,24 +132,25 @@ def saveNewMeasurementPeriod():
             port=VT_MYSQL_PORT
         )
 
-        data = sanitizeJson(request.json)
+        data = request.json
         activities = data.get('activities')
-        email = data.get('email')
-        startDate = data.get('startDate')
-        endDate = data.get('endDate')
-        entered = data.get('entered')
+        email = sanitizeInput(data.get('email'))
+        startDate = sanitizeInput(data.get('startDate'))
+        endDate = sanitizeInput(data.get('endDate'))
+        entered = sanitizeInput(data.get('entered'))
+        totalDuration = sanitizeInput(data.get('totalDuration'))
 
         # Create connection to VT MySQL Database
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that user exists
-        # cursor.execute(f"SELECT * FROM User WHERE email = ?", (str(email)))
+        # cursor.execute(f"SELECT * FROM User WHERE email = '{(str(email))}'")
         # user = cursor.fetchone()
         # if user is None:
         #     return jsonify({"error": "User not found"})
         
         # Now create new Measurement Period and insert into its table
-        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}')"
+        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}')"
         cursor.execute(sqlString)
         db.commit()
             
@@ -160,7 +161,8 @@ def saveNewMeasurementPeriod():
         db.commit()
 
         numberOfActivities = 0
-        for activity in activities:
+        for rawActivity in activities:
+            activity = sanitizeJson(rawActivity)
             sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, pointScale) VALUES ('{newMeasurementPeriod['LAST_INSERT_ID()']}', '{activity['type']}', '{activity['duration']}', '{activity['question1']}', '{activity['question2']}', '{activity['question3']}', {activity['pointScale']})"
             cursor.execute(sqlString)
             db.commit()
@@ -171,6 +173,86 @@ def saveNewMeasurementPeriod():
     except Exception as e:
         print(e)
         return jsonify({"success": False, "exception": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+
+
+
+# retreive all user records from db
+def getAllUserRecords():
+    try:
+        db = None
+        cursor = None
+
+        db = pymysql.connections.Connection(
+            host=VT_MYSQL_HOST,
+            user=VT_MYSQL_USER,
+            password=VT_MYSQL_PASSWORD,
+            database=VT_MYSQL_DB,
+            port=VT_MYSQL_PORT
+        )
+
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        # TODO may want to apply a join / filter to only get users with at least one measurement period
+        cursor.execute(f"SELECT Email FROM User")
+        users = cursor.fetchall()
+        # For each user, pull all measurement periods and calculate latest, total hours, and total number of periods
+        finalUsers = []
+        for user in users:
+            cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{user['Email']}'")
+            periods = cursor.fetchall()
+            user['numberOfPeriods'] = len(periods)
+            totalHoursForUser = 0
+            user['lastRecordedPeriodEndDate'] = None
+            user['lastRecordedPeriodStartDate'] = None
+            for period in periods:
+                # No need to iterate through every activity here thanks to totalDuration cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = '{period['Id']}'")
+                # activities = cursor.fetchall()
+                # for activity in activities:
+                #     user['totalHours'] += activity['Duration']
+                if user['lastRecordedPeriodEndDate'] is None or period['EndDate'] > user['lastRecordedPeriodEndDate']:
+                    user['lastRecordedPeriodEndDate'] = period['EndDate']
+                    user['lastRecordedPeriodStartDate'] = period['StartDate']
+                if period['TotalDuration']:
+                    totalHoursForUser += period['TotalDuration']
+            user['totalHoursRecorded'] = totalHoursForUser
+            finalUsers.append(user)
+
+        return jsonify({"success": True, "data": finalUsers})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+    
+# retreive detiled user information from db
+def getUserDetails():
+    try:
+        db = None
+        cursor = None
+
+        db = pymysql.connections.Connection(
+            host=VT_MYSQL_HOST,
+            user=VT_MYSQL_USER,
+            password=VT_MYSQL_PASSWORD,
+            database=VT_MYSQL_DB,
+            port=VT_MYSQL_PORT
+        )
+
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(f"SELECT * FROM User WHERE Email = '{(sanitizeInput(request.json.get('email')))}'")
+        records = cursor.fetchone()
+        return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
     finally:
         if (cursor != None):
             cursor.close()
@@ -204,7 +286,7 @@ def getAllActivityRecords():
         if (db != None):
             db.close()
     
-# retreive all activity records from db
+# retreive all activity records for a specified measurement period from db
 def getActivityRecordsForPeriod():
     try:
         db = None
@@ -219,8 +301,13 @@ def getActivityRecordsForPeriod():
         )
 
         cursor = db.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = ?", (sanitizeInput(request.json.get('measurementPeriod'))))
+        print("here")
+        print(request.json.get('measurementPeriod'))
+        print(sanitizeInput(str(request.json.get('measurementPeriod'))))
+        cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = '{(sanitizeInput(str(request.json.get('measurementPeriod'))))}'")
+        print("executed sql")
         records = cursor.fetchall()
+        print(records)
         return jsonify({"success": True, "data": records})
     except Exception as e:
         print(e)
@@ -247,6 +334,33 @@ def getAllMeasurementPeriods():
 
         cursor = db.cursor(pymysql.cursors.DictCursor)
         cursor.execute(f"SELECT * FROM MeasurementPeriod")
+        records = cursor.fetchall()
+        return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+# retreive all measurement periods for a specified user from db
+def getAllMeasurementPeriodsForUser():
+    try:
+        db = None
+        cursor = None
+
+        db = pymysql.connections.Connection(
+            host=VT_MYSQL_HOST,
+            user=VT_MYSQL_USER,
+            password=VT_MYSQL_PASSWORD,
+            database=VT_MYSQL_DB,
+            port=VT_MYSQL_PORT
+        )
+
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{(sanitizeInput(request.json.get('email')))}'")
         records = cursor.fetchall()
         return jsonify({"success": True, "data": records})
     except Exception as e:

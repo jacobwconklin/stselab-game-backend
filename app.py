@@ -4,10 +4,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import requests
+
+# Stse-lab Golf Project Functions:
 from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults, armRoundResult, diceResult
 from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults
-from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
+
+# Navy Design Process Project Functions:
+from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails
+
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
 from flask_cors import CORS
@@ -175,6 +180,9 @@ app.add_url_rule('/navydp/checkLogin', 'checkLogin', checkLogin, methods=['POST'
 app.add_url_rule('/navydp/getAllActivityRecords', 'getAllActivityRecords', getAllActivityRecords, methods=['GET'])
 app.add_url_rule('/navydp/getActivityRecordsForPeriod', 'getActivityRecordsForPeriod', getActivityRecordsForPeriod, methods=['POST'])
 app.add_url_rule('/navydp/getAllMeasurementPeriods', 'getAllMeasurementPeriods', getAllMeasurementPeriods, methods=['GET']) 
+app.add_url_rule('/navydp/getAllMeasurementPeriodsForUser', 'getAllMeasurementPeriodsForUser', getAllMeasurementPeriodsForUser, methods=['POST'])
+app.add_url_rule('/navydp/getAllUserRecords', 'getAllUserRecords', getAllUserRecords, methods=['GET'])
+app.add_url_rule('/navydp/getUserDetails', 'getUserDetails', getUserDetails, methods=['POST'])
 
 if __name__ == '__main__':
     app.run()

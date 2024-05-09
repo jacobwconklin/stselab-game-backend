@@ -62,6 +62,7 @@ CREATE TABLE topcu.MeasurementPeriod (
     StartDate varchar(255),
     EndDate varchar(255),
     Entered varchar(255),
+    TotalDuration int,
     FOREIGN KEY (Email) REFERENCES User(Email)
 )
 
