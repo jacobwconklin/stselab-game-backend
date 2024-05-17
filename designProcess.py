@@ -7,6 +7,7 @@ import hashlib
 
 # helper function to hash and salt passwords
 def hashPassword(password):
+    # TODO change and move salt to secrets, it does no good in a public github repo ... 
     salt = "STSE-SALT-Vamolaentao"
     combinedString = salt + password
     encoded = combinedString.encode()
@@ -163,7 +164,11 @@ def saveNewMeasurementPeriod():
         numberOfActivities = 0
         for rawActivity in activities:
             activity = sanitizeJson(rawActivity)
-            sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, pointScale) VALUES ('{newMeasurementPeriod['LAST_INSERT_ID()']}', '{activity['type']}', '{activity['duration']}', '{activity['question1']}', '{activity['question2']}', '{activity['question3']}', {activity['pointScale']})"
+            q1 = activity.get('question1', None)
+            q2 = activity.get('question2', None)
+            q3 = activity.get('question3', None)
+            q4 = activity.get('question4', None)
+            sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, Question4) VALUES ('{newMeasurementPeriod['LAST_INSERT_ID()']}', '{activity['type']}', '{activity['duration']}', '{q1}', '{q2}', '{q3}', '{q4}')"
             cursor.execute(sqlString)
             db.commit()
             numberOfActivities += 1

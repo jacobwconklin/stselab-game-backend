@@ -78,5 +78,5 @@ CREATE TABLE ActivityRecord (
     Question1 varchar(255),
     Question2 varchar(255),
     Question3 varchar(255),
-    pointScale int
+    Question4 varchar(255),
 )
