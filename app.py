@@ -11,7 +11,7 @@ from session import sessionStatus, advanceSession, roundResults, finalResults, s
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 
 # Navy Design Process Project Functions:
-from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists
+from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists, getMeasurementPeriodsInRange
 
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
@@ -215,6 +215,7 @@ app.add_url_rule('/navydp/getAllMeasurementPeriodsForUser', 'getAllMeasurementPe
 app.add_url_rule('/navydp/getAllUserRecords', 'getAllUserRecords', getAllUserRecords, methods=['POST'])
 app.add_url_rule('/navydp/getUserDetails', 'getUserDetails', getUserDetails, methods=['POST'])
 app.add_url_rule('/navydp/verifyEmail', 'verifyEmail', checkEmailExists, methods=['POST'])
+app.add_url_rule('/navydp/getMeasurementPeriodsInRange', 'getMeasurementPeriodsInRange', getMeasurementPeriodsInRange, methods=['POST'])
 
 if __name__ == '__main__':
     app.run()

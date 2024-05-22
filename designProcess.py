@@ -139,9 +139,9 @@ def saveNewMeasurementPeriod():
         startDate = sanitizeInput(data.get('startDate'))
         endDate = sanitizeInput(data.get('endDate'))
         entered = sanitizeInput(data.get('entered'))
-        lastTime = False
+        lastTime = 0
         if data.get('lastTime') == True:
-            lastTime = True
+            lastTime = 1
         print("lastTime: ", lastTime)
         totalDuration = sanitizeInput(data.get('totalDuration'))
 
@@ -444,6 +444,35 @@ def getAllMeasurementPeriodsForUser():
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{data.get('email')}'")
+        records = cursor.fetchall()
+        return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+# Used for time view on the admin dashboard. Gives all measurement periods in a specific date range based on start date,
+# and only shows records with totalDuration filled in ( > 0). Front end will group the values by email to display in a table view.
+def getMeasurementPeriodsInRange():
+    try:
+        db = None
+        cursor = None
+
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
+        
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        earliestStartDate = data.get('earliestStartDate')
+        latestStartDate = data.get('latestStartDate')
+
+        cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE TotalDuration > 0 AND StartDate > '{earliestStartDate}' AND StartDate < '{latestStartDate}'")
         records = cursor.fetchall()
         return jsonify({"success": True, "data": records})
     except Exception as e:
