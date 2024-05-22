@@ -6,3 +6,4 @@ requests
 pyodbc
 python-dotenv
 PyMySQL
+Flask-Mail

@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT
+from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT, VT_MYSQL_PASSWORD_SALT
 import pymysql
 import pymysql.cursors
 import hashlib
@@ -8,7 +8,7 @@ import hashlib
 # helper function to hash and salt passwords
 def hashPassword(password):
     # TODO change and move salt to secrets, it does no good in a public github repo ... 
-    salt = "STSE-SALT-Vamolaentao"
+    salt = VT_MYSQL_PASSWORD_SALT
     combinedString = salt + password
     encoded = combinedString.encode()
     hashResult = hashlib.sha512( encoded ).hexdigest()
@@ -139,6 +139,10 @@ def saveNewMeasurementPeriod():
         startDate = sanitizeInput(data.get('startDate'))
         endDate = sanitizeInput(data.get('endDate'))
         entered = sanitizeInput(data.get('entered'))
+        lastTime = False
+        if data.get('lastTime') == True:
+            lastTime = True
+        print("lastTime: ", lastTime)
         totalDuration = sanitizeInput(data.get('totalDuration'))
 
         # Create connection to VT MySQL Database
@@ -151,7 +155,7 @@ def saveNewMeasurementPeriod():
         #     return jsonify({"error": "User not found"})
         
         # Now create new Measurement Period and insert into its table
-        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}')"
+        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration, LastTime) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}', '{lastTime}')"
         cursor.execute(sqlString)
         db.commit()
             
@@ -184,11 +188,44 @@ def saveNewMeasurementPeriod():
         if (db != None):
             db.close()
 
+# check that email already exists, if not give pop-up that sends user to sign up page. 
+def checkEmailExists():
+    try:
+        db = None
+        cursor = None
 
+        db = pymysql.connections.Connection(
+            host=VT_MYSQL_HOST,
+            user=VT_MYSQL_USER,
+            password=VT_MYSQL_PASSWORD,
+            database=VT_MYSQL_DB,
+            port=VT_MYSQL_PORT
+        )
+        
+        data = sanitizeJson(request.json)
 
+        email = data.get('email')
 
-# retreive all user records from db
-def getAllUserRecords():
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        sqlString = f"SELECT * FROM User WHERE Email = '{email}'"
+        cursor.execute(sqlString)
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"success": False, "error": "User not found"})
+        return jsonify({"success": True})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+# ADMIN FUNCTIONS
+
+# Verify admin credentials
+def checkAdminCredentials(email, password = None, token = None):
     try:
         db = None
         cursor = None
@@ -201,7 +238,62 @@ def getAllUserRecords():
             port=VT_MYSQL_PORT
         )
 
+        # TODO could create a list of admin usernames / emails, but for now it will be hardcoded to just 'admin'
+        if email != 'admin':
+            return False
+        
+        hashedPassword = None
+        if token:
+            hashedPassword = token
+        elif password:
+            hashedPassword = hashPassword(password)
+        else:
+            return False
+
         cursor = db.cursor(pymysql.cursors.DictCursor)
+        sqlString = f"SELECT * FROM User WHERE Email = '{email}' AND Password = '{hashedPassword}'"
+        cursor.execute(sqlString)
+        user = cursor.fetchone()
+        if user is None:
+            return False
+        return hashedPassword  
+    except Exception as e:
+        print(e)
+        return False
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+            
+# check admin login matches 
+def checkLogin():
+    try:
+        data = sanitizeJson(request.json)
+        email = data.get('email')
+        password = data.get('password')
+        adminHashPassword = checkAdminCredentials(email, password=password)
+        if not adminHashPassword:
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
+        else: 
+            return jsonify({"success": True, "token": adminHashPassword})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+
+# retreive all user records from db
+def getAllUserRecords():
+    try:
+        db = None
+        cursor = None
+
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
+
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
         # TODO may want to apply a join / filter to only get users with at least one measurement period
         cursor.execute(f"SELECT Email FROM User")
         users = cursor.fetchall()
@@ -243,16 +335,14 @@ def getUserDetails():
         db = None
         cursor = None
 
-        db = pymysql.connections.Connection(
-            host=VT_MYSQL_HOST,
-            user=VT_MYSQL_USER,
-            password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
-            port=VT_MYSQL_PORT
-        )
-
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
+        
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(f"SELECT * FROM User WHERE Email = '{(sanitizeInput(request.json.get('email')))}'")
+
+        cursor.execute(f"SELECT * FROM User WHERE Email = '{data.get('email')}'")
         records = cursor.fetchone()
         return jsonify({"success": True, "data": records})
     except Exception as e:
@@ -270,15 +360,13 @@ def getAllActivityRecords():
         db = None
         cursor = None
 
-        db = pymysql.connections.Connection(
-            host=VT_MYSQL_HOST,
-            user=VT_MYSQL_USER,
-            password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
-            port=VT_MYSQL_PORT
-        )
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
 
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
+
         cursor.execute(f"SELECT * FROM ActivityRecord")
         records = cursor.fetchall()
         return jsonify({"success": True, "data": records})
@@ -297,22 +385,16 @@ def getActivityRecordsForPeriod():
         db = None
         cursor = None
 
-        db = pymysql.connections.Connection(
-            host=VT_MYSQL_HOST,
-            user=VT_MYSQL_USER,
-            password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
-            port=VT_MYSQL_PORT
-        )
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
 
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
-        print("here")
-        print(request.json.get('measurementPeriod'))
-        print(sanitizeInput(str(request.json.get('measurementPeriod'))))
-        cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = '{(sanitizeInput(str(request.json.get('measurementPeriod'))))}'")
-        print("executed sql")
+
+        cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = '{data.get('measurementPeriod')}'")
         records = cursor.fetchall()
-        print(records)
+
         return jsonify({"success": True, "data": records})
     except Exception as e:
         print(e)
@@ -329,15 +411,13 @@ def getAllMeasurementPeriods():
         db = None
         cursor = None
 
-        db = pymysql.connections.Connection(
-            host=VT_MYSQL_HOST,
-            user=VT_MYSQL_USER,
-            password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
-            port=VT_MYSQL_PORT
-        )
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
 
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
+
         cursor.execute(f"SELECT * FROM MeasurementPeriod")
         records = cursor.fetchall()
         return jsonify({"success": True, "data": records})
@@ -356,16 +436,14 @@ def getAllMeasurementPeriodsForUser():
         db = None
         cursor = None
 
-        db = pymysql.connections.Connection(
-            host=VT_MYSQL_HOST,
-            user=VT_MYSQL_USER,
-            password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
-            port=VT_MYSQL_PORT
-        )
-
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
+        
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{(sanitizeInput(request.json.get('email')))}'")
+
+        cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{data.get('email')}'")
         records = cursor.fetchall()
         return jsonify({"success": True, "data": records})
     except Exception as e:
@@ -376,40 +454,3 @@ def getAllMeasurementPeriodsForUser():
             cursor.close()
         if (db != None):
             db.close()
-
-# check login matches 
-def checkLogin():
-    try:
-        db = None
-        cursor = None
-
-        db = pymysql.connections.Connection(
-            host=VT_MYSQL_HOST,
-            user=VT_MYSQL_USER,
-            password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
-            port=VT_MYSQL_PORT
-        )
-        
-        data = sanitizeJson(request.json)
-
-        email = data.get('email')
-        password = data.get('password')
-
-        cursor = db.cursor(pymysql.cursors.DictCursor)
-        sqlString = f"SELECT * FROM User WHERE Email = '{email}' AND Password = '{hashPassword(password)}'"
-        cursor.execute(sqlString)
-        user = cursor.fetchone()
-        if user is None:
-            return jsonify({"success": False, "error": "User not found"})
-        return jsonify({"success": True}) # TODO figure out if creating / adding a token here? 
-    except Exception as e:
-        print(e)
-        return jsonify({"success": False, "exception": str(e)})    
-    finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
-
-# TODO reset pw

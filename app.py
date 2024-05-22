@@ -11,16 +11,32 @@ from session import sessionStatus, advanceSession, roundResults, finalResults, s
 from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 
 # Navy Design Process Project Functions:
-from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails
+from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists
 
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
 from flask_cors import CORS
+from flask_mail import Mail
+from flask_mail import Message
 
 # TODO prevent SQL injections (probably regex on sql strings)
 
 app = Flask(__name__)
 CORS(app)
+
+from environmentSecrets import ADMIN_EMAIL_PASSWORD
+
+# email credentials:
+app.config.update(dict(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USE_SSL=False,
+    MAIL_USERNAME = 'design.process.survey@gmail.com',
+    MAIL_PASSWORD = ADMIN_EMAIL_PASSWORD
+))
+
+mail = Mail(app)
 
 # Temporary global variables before database is connected
 serverStorageCount = 0
@@ -60,10 +76,25 @@ def hello():
        return redirect(url_for('index'))
    
 # TODO - to be used for resetting passwords, currently testing sending emails from flask apps:
-@app.route('/sendEmail', methods=['GET'])
+@app.route('/sendEmail', methods=['POST'])
 def sendEmail():
     try:
+        data = request.json
+        email = data.get('email')
+        message = data.get('message')
+        print("Got message: " + message)
         # Send test email
+        msg = Message("Admin Message",
+                  sender="design.process.survey@gmail.com",
+                  recipients=[email],
+                  html=f"""
+                    <h2>This is a reminder:</h2>
+                    <br />
+                    <b>{message}</b>
+                  """
+                  )
+        mail.send(msg)
+
         return jsonify({"success": True})
     except Exception as e:
         print(e)
@@ -179,10 +210,11 @@ app.add_url_rule('/navydp/saveNewMeasurementPeriod', 'saveNewMeasurementPeriod',
 app.add_url_rule('/navydp/checkLogin', 'checkLogin', checkLogin, methods=['POST'])
 app.add_url_rule('/navydp/getAllActivityRecords', 'getAllActivityRecords', getAllActivityRecords, methods=['GET'])
 app.add_url_rule('/navydp/getActivityRecordsForPeriod', 'getActivityRecordsForPeriod', getActivityRecordsForPeriod, methods=['POST'])
-app.add_url_rule('/navydp/getAllMeasurementPeriods', 'getAllMeasurementPeriods', getAllMeasurementPeriods, methods=['GET']) 
+app.add_url_rule('/navydp/getAllMeasurementPeriods', 'getAllMeasurementPeriods', getAllMeasurementPeriods, methods=['POST']) 
 app.add_url_rule('/navydp/getAllMeasurementPeriodsForUser', 'getAllMeasurementPeriodsForUser', getAllMeasurementPeriodsForUser, methods=['POST'])
-app.add_url_rule('/navydp/getAllUserRecords', 'getAllUserRecords', getAllUserRecords, methods=['GET'])
+app.add_url_rule('/navydp/getAllUserRecords', 'getAllUserRecords', getAllUserRecords, methods=['POST'])
 app.add_url_rule('/navydp/getUserDetails', 'getUserDetails', getUserDetails, methods=['POST'])
+app.add_url_rule('/navydp/verifyEmail', 'verifyEmail', checkEmailExists, methods=['POST'])
 
 if __name__ == '__main__':
     app.run()
