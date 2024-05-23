@@ -1,11 +1,11 @@
 -- SQL database structure and commands for instantiating database, querying database, etc. 
 
 -- Session Table:
-CREATE TABLE session (
+CREATE TABLE Session (
     JoinCode int PRIMARY KEY,
     Round int NULL,
     StartDate datetime,
-    EndDate datetime,
+    EndDate datetime
 );
 
 -- Player Brief Table:
@@ -13,7 +13,8 @@ CREATE TABLE PlayerBrief (
     Id varchar(255) PRIMARY KEY,
     Name varchar(255),
     Color varchar(255),
-    SessionId int FOREIGN KEY REFERENCES session(JoinCode),
+    SessionId int,
+    FOREIGN KEY (SessionId) REFERENCES session(JoinCode)
 )
 
 -- Player Information Table:
@@ -47,7 +48,7 @@ CREATE TABLE PlayerInformation (
     golfExperience int,
 
     SystemsEngineeringExpertise int,
-    StatementOfWorkExpertise int,
+    StatementOfWorkExpertise int
 )
 
 -- If there is only a value for SolverOne and not SolverTwo and SolverThree and if the round is 1 or 2 
@@ -61,30 +62,32 @@ CREATE TABLE PlayerInformation (
 -- with cost. This value is chosen by the player
 -- Round Result Table:
 CREATE TABLE RoundResult (
-    Id int IDENTITY(1,1) PRIMARY KEY,
+    Id int AUTO_INCREMENT PRIMARY KEY,
     Round int,
     Shots int,
     Cost int,
     SolverOne int,
     SolverTwo int,
     SolverThree int,
-    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+    PlayerId varchar(255), 
+    FOREIGN KEY (PlayerId) REFERENCES PlayerBrief(Id),
     Architecture varchar(255),
     Score int,
     CustomPerformanceWeight int,
-    Reasoning varchar(255),
-);
+    Reasoning varchar(255)
+)
 
 -- Free Roam Result from expiremental playground
 -- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
 -- Modules are ints where 1 -> Drive, 2 -> Long, 3 -> Fairway, 4 -> Short, 5 -> Putt
 CREATE TABLE FreeRoamResult (
-    Id int IDENTITY(1,1) PRIMARY KEY,
+    Id int AUTO_INCREMENT PRIMARY KEY,
     Shots int,
     Distance int,
     Solver int,
     Module int,
-    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+    PlayerId varchar(255),
+    FOREIGN KEY (PlayerId) REFERENCES PlayerBrief(Id)
 )
 
 -- Free Roam Survey Results for players to choose the best solver for each module.
@@ -97,30 +100,32 @@ CREATE TABLE FreeRoamResult (
 -- 6 -> Amateur and Specialist
 -- 7 -> Professional, Amateur, and Specialist (could be stored in 3 bits!)
 CREATE TABLE FreeRoamSurvey (
-    Id int IDENTITY(1,1) PRIMARY KEY,
+    Id int AUTO_INCREMENT PRIMARY KEY,
     Drive int,
-    Long int,
+    LongChoice int,
     Fairway int,
     Short int,
     Putt int,
     EntireHole int,
-    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+    PlayerId varchar(255), 
+    FOREIGN KEY (PlayerId) REFERENCES PlayerBrief(Id)
 )
 
 -- Saves results of D&D inspired dice picking for Onboarding and Offboarding game
 -- Save number of each kind of dice, save playerID, save if it was Onboarding or Offboarding, 
 -- and save their score (probability of rolling 12 0r 20)
 CREATE TABLE DiceResult (
-    Id int IDENTITY(1,1) PRIMARY KEY,
+    Id int AUTO_INCREMENT PRIMARY KEY,
     D6 int,
     D8 int,
     D10 int,
     D12 int,
     D20 int,
-    PlayerId varchar(255) FOREIGN KEY REFERENCES PlayerBrief(Id),
+    PlayerId varchar(255),
+    FOREIGN KEY (PlayerId) REFERENCES PlayerBrief(Id),
     Onboarding bit,
     Score DECIMAL(4,2),
-    Reasoning varchar(255),
+    Reasoning varchar(255)
 )
 
 -- Queries for saving csv files beyond selecting all per table:

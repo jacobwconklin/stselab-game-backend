@@ -31,14 +31,7 @@ def saveNewUser():
 
         db = None
         cursor = None
-
-        db = pymysql.connections.Connection(
-            host=VT_MYSQL_HOST,
-            user=VT_MYSQL_USER,
-            password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
-            port=VT_MYSQL_PORT
-        )
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
 
         progress = "Start of function"
         
@@ -483,3 +476,15 @@ def getMeasurementPeriodsInRange():
             cursor.close()
         if (db != None):
             db.close()
+
+
+
+'''
+Using pymysql cursor:
+cursor = db.cursor(pymysql.cursors.DictCursor)
+sqlString = f"SELECT * FROM User WHERE Email = '{variable}' AND Password = '{variable2}'"
+cursor.execute(sqlString)
+oneValue = cursor.fetchone()
+allValues = cursor.fetchall()
+db.commit() # This will persist changes if inputing / manipulating db and not just grabbing a value
+'''

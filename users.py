@@ -8,13 +8,19 @@ from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime
 from flask import (request, jsonify)
-from environmentSecrets import AZURE_SQL_CONNECTION_STRING
+from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_STSELAB_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT, VT_MYSQL_PASSWORD_SALT
+import pymysql
+import pymysql.cursors
 
 # Begins a new game by a host, creating a session. Will need all of the information collected for each player, without
 # a join code. Must return if successful or not, and if successful, the join code for the session.
 # @app.route('/player/host', methods=['POST'])
 def host():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # First pull data from request
         data = request.json
         name = data.get('name')
@@ -27,6 +33,10 @@ def host():
         ethnicity = data.get('ethnicity')
 
         isCollegeStudent = data.get('isCollegeStudent')
+        if isCollegeStudent:
+            isCollegeStudent = 1
+        else:
+            isCollegeStudent = 0
         university = data.get('university')
         degreeProgram = data.get('degreeProgram')
         yearsInProgram = data.get('yearsInProgram')
@@ -52,58 +62,61 @@ def host():
         if name is None or color is None:
             return jsonify({"error": "Missing required parameters"})
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Now generate a join code and create a new session in the database
         joinCode = random.randint(100000, 999999)
         # check join code doesn't already exist in database
         newCode = False
         while not newCode:
-            cursor.execute(f"SELECT * FROM Session WHERE JoinCode = ?", (str(joinCode)))
-            if cursor.fetchone() is None:
+            sqlString = f"SELECT * FROM Session WHERE JoinCode = '{str(joinCode)}'"
+            cursor.execute(sqlString)
+            retreived = cursor.fetchone()
+            if retreived is None:
                 newCode = True
             else:
                 joinCode = random.randint(100000, 999999)
 
         # Insert new session into database
         # Now using UTC date, previously used: datetime.today().strftime('%Y-%m-%d %H:%M:%S') as a varchar
-        cursor.execute(f"INSERT INTO Session (JoinCode, Round, StartDate, EndDate) VALUES (?, 0, GETUTCDATE(), ?)",
-            (str(joinCode), None))
-        conn.commit()
+        sqlString = f"INSERT INTO Session (JoinCode, Round, StartDate, EndDate) VALUES ('{str(joinCode)}', 0, CURRENT_TIMESTAMP(), {'NULL'})"
+        cursor.execute(sqlString)
+        db.commit()
 
         # Generate UUID for player
         playerId = uuid.uuid4()
 
         # Create brief version of Player to be retrieved during the game polling
-        cursor.execute(f"INSERT INTO PlayerBrief (Id, Name, Color, SessionId) VALUES (?, ?, ?, ?)",
-            (playerId, name, color, str(joinCode)))
-        conn.commit()
+        sqlString = f"INSERT INTO PlayerBrief (Id, Name, Color, SessionId) VALUES ('{str(playerId)}', '{name}', '{color}', '{str(joinCode)}')"
+        cursor.execute(sqlString)
+        db.commit()
 
         # Now create new extensive Player Information and save all information in the db with the same id
-        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Residence, 
-                        Ethnicity, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
-                        BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, 
-                        RiskAnalysisExperience, SupplierExperience, ProposalOrStatementOfWorkExperience, BidsForRequestsExperience,
-                        SystemArchitectureExperience, GolfExperience, SystemsEngineeringExpertise, StatementOfWorkExpertise) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
-                (playerId, name, participationReason, gender, age, residence, ethnicity, isCollegeStudent, university, degreeProgram,
-                yearsInProgram, highSchoolEducation, bachelorsEducation, mastersEducation, doctorateEducation, otherEducation, otherEducationName, 
-                riskAnalysisExperience, supplierExperience, proposalOrStatementOfWorkExperience, bidsForRequestsExperience,
-                systemArchitectureExperience, golfExperience, systemsEngineeringExpertise, statementOfWorkExpertise))  
-        conn.commit()
+        sqlString = f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Residence, Ethnicity, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, RiskAnalysisExperience, SupplierExperience, ProposalOrStatementOfWorkExperience, BidsForRequestsExperience, SystemArchitectureExperience, GolfExperience, SystemsEngineeringExpertise, StatementOfWorkExpertise) Values ('{str(playerId)}', '{name}', '{participationReason}', '{gender}', '{age}', '{residence}', '{ethnicity}', {isCollegeStudent}, '{university}', '{degreeProgram}', '{yearsInProgram}', '{highSchoolEducation}', '{bachelorsEducation}', '{mastersEducation}', '{doctorateEducation}', '{otherEducation}', '{otherEducationName}', '{riskAnalysisExperience}', '{supplierExperience}', '{proposalOrStatementOfWorkExperience}', '{bidsForRequestsExperience}', '{systemArchitectureExperience}', '{golfExperience}', '{systemsEngineeringExpertise}', '{statementOfWorkExpertise}')'''
+
+        cursor.execute(sqlString)  
+        db.commit()
 
         # On success return success and join code
         return jsonify({"success": True, "joinCode": joinCode, "playerId": playerId})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 
 # Joins a game creating a player for a given session IF that session exists
 def join():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # First pull data request, must have valid join code
         data = request.json
         name = data.get('name')
@@ -116,6 +129,10 @@ def join():
         ethnicity = data.get('ethnicity')
 
         isCollegeStudent = data.get('isCollegeStudent')
+        if isCollegeStudent:
+            isCollegeStudent = 1
+        else:
+            isCollegeStudent = 0
         university = data.get('university')
         degreeProgram = data.get('degreeProgram')
         yearsInProgram = data.get('yearsInProgram')
@@ -142,12 +159,12 @@ def join():
         if name is None or color is None or joinCode is None:
             return jsonify({"error": "Missing required parameters"})
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that session exists
-        cursor.execute(f"SELECT * FROM Session WHERE JoinCode = ?", (str(joinCode)))
+        sqlString = f"SELECT * FROM Session WHERE JoinCode = '{str(joinCode)}'"
+        cursor.execute(sqlString)
         session = cursor.fetchone()
         if session is None:
             return jsonify({"error": "Session not found"})
@@ -161,28 +178,26 @@ def join():
         playerId = uuid.uuid4()
 
         # Now create new brief version of the player and insert them into the database
-        cursor.execute(f"INSERT INTO PlayerBrief (Id, Name, Color, SessionId) VALUES (?, ?, ?, ?)", 
-            (playerId, name, color, str(joinCode)))  
-        conn.commit()
+        sqlString = f"INSERT INTO PlayerBrief (Id, Name, Color, SessionId) VALUES ('{str(playerId)}', '{name}', '{color}', '{str(joinCode)}')"
+        cursor.execute(sqlString)  
+        db.commit()
 
         # Now save extensive player information into the database
         # Now create new extensive Player Information and save all information in the db with the same id
-        cursor.execute(f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Residence, 
-                        Ethnicity, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, 
-                        BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, 
-                        RiskAnalysisExperience, SupplierExperience, ProposalOrStatementOfWorkExperience, BidsForRequestsExperience,
-                        SystemArchitectureExperience, GolfExperience, SystemsEngineeringExpertise, StatementOfWorkExpertise) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
-                (playerId, name, participationReason, gender, age, residence, ethnicity, isCollegeStudent, university, degreeProgram,
-                yearsInProgram, highSchoolEducation, bachelorsEducation, mastersEducation, doctorateEducation, otherEducation, otherEducationName, 
-                riskAnalysisExperience, supplierExperience, proposalOrStatementOfWorkExperience, bidsForRequestsExperience,
-                systemArchitectureExperience, golfExperience, systemsEngineeringExpertise, statementOfWorkExpertise))  
-        conn.commit()
+        sqlString = f'''INSERT INTO PlayerInformation (Id, Name, ParticipationReason, Gender, Age, Residence, Ethnicity, IsCollegeStudent, University, DegreeProgram, YearsInProgram, HighSchoolEducation, BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, RiskAnalysisExperience, SupplierExperience, ProposalOrStatementOfWorkExperience, BidsForRequestsExperience, SystemArchitectureExperience, GolfExperience, SystemsEngineeringExpertise, StatementOfWorkExpertise) Values ('{str(playerId)}', '{name}', '{participationReason}', '{gender}', '{age}', '{residence}', '{ethnicity}', {isCollegeStudent}, '{university}', '{degreeProgram}', '{yearsInProgram}', '{highSchoolEducation}', '{bachelorsEducation}', '{mastersEducation}', '{doctorateEducation}', '{otherEducation}', '{otherEducationName}', '{riskAnalysisExperience}', '{supplierExperience}', '{proposalOrStatementOfWorkExperience}', '{bidsForRequestsExperience}', '{systemArchitectureExperience}', '{golfExperience}', '{systemsEngineeringExpertise}', '{statementOfWorkExpertise}')'''
+
+        cursor.execute(sqlString)  
+        db.commit()
 
         return jsonify({"success": True, "playerId": playerId})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 
 # Removes a player from a session, called by the host to remove them or the player themselves to leave
@@ -190,32 +205,46 @@ def join():
 # but can be changed to remove player data from the database (and all reliant round results in recursive delete) if desired.
 def remove():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # First check that required data is in request, must have valid playerId
         data = request.json
         playerId = data.get('playerId')
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Ensure player exists
-        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(playerId)))
+        sqlString = f"SELECT * FROM PlayerBrief WHERE Id = '{str(playerId)}'"
+        cursor.execute(sqlString)
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
         
-        cursor.execute(f"UPDATE PlayerBrief SET SessionId = Null WHERE Id = ?", str(playerId))
-        conn.commit()
+        sqlString = f"UPDATE PlayerBrief SET SessionId = NULL WHERE Id = '{str(playerId)}'"
+        cursor.execute(sqlString)
+        db.commit()
 
         return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
 
 
 # Saves the result for one player for one round of the tournament. Includes shots, cost, and solvers played with
 def roundResult():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # Save player's results for a round in the tournament
         # First check that required data is in request, must have valid Id for Player,
         # as well as shot, cost, and round information
@@ -224,8 +253,14 @@ def roundResult():
         shots = data.get('shots')
         cost = data.get('cost')
         solverOne = data.get('solverOne')
+        if solverOne is None:
+            solverOne = "NULL"
         solverTwo = data.get('solverTwo')
+        if solverTwo is None:
+            solverTwo = "NULL"
         solverThree = data.get('solverThree')
+        if solverThree is None:
+            solverThree = "NULL"
         architecture = data.get('architecture')
         round = data.get('round')
         score = data.get('score')
@@ -236,12 +271,12 @@ def roundResult():
         if score is None:
             score = -1
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
-        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        sqlString = f"SELECT * FROM PlayerBrief WHERE Id = '{str(id)}'"
+        cursor.execute(sqlString)
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
@@ -251,18 +286,27 @@ def roundResult():
         # So space is reserved for 3 solvers for each round result but value may be None / Null
 
         # Now create new Round Result and insert into its table
-        cursor.execute(f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture, Score, CustomPerformanceWeight, Reasoning) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-            (str(round), str(shots), str(cost), solverOne, solverTwo, solverThree, str(id), architecture, str(score), customPerformanceWeight, str(reasoning)))  
-        conn.commit()
+        sqlString = f"INSERT INTO RoundResult (Round, Shots, Cost, SolverOne, SolverTwo, SolverThree, PlayerId, Architecture, Score, CustomPerformanceWeight, Reasoning) VALUES ('{str(round)}', '{str(shots)}', '{str(cost)}', {solverOne}, {solverTwo}, {solverThree}, '{str(id)}', '{architecture}', '{str(score)}', '{customPerformanceWeight}', '{str(reasoning)}')"
+        cursor.execute(sqlString)  
+        db.commit()
 
         return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 # Saves the result for one player for one round of the Mechanical Arm Mission. Includes Grams(weight), cost, architecture, score, and solvers played with
 def armRoundResult():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # Save player's results for a round in the Mechanical Arm Mission
         # First check that required data is in request, must have valid Id for Player,
         # as well as weight, cost, and round information
@@ -281,12 +325,12 @@ def armRoundResult():
         if score is None:
             score = -1
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
-        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        sqlString = f"SELECT * FROM PlayerBrief WHERE Id = '{str(id)}'"
+        cursor.execute(sqlString)
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
@@ -295,42 +339,62 @@ def armRoundResult():
         # So space is reserved for 4 solvers for each round result but value may be None / Null
 
         # Now create new Round Result and insert into its table
-        cursor.execute(f"INSERT INTO ArmRoundResult (Round, Grams, Cost, SolverOne, SolverTwo, SolverThree, SolverFour, PlayerId, Architecture, Score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                       (str(round), str(weight), str(cost), solverOne, solverTwo, solverThree, solverFour, str(id), architecture, str(score)))  
-        conn.commit()
+        sqlString = f"INSERT INTO ArmRoundResult (Round, Grams, Cost, SolverOne, SolverTwo, SolverThree, SolverFour, PlayerId, Architecture, Score) VALUES ('{str(round)}', '{str(weight)}', '{str(cost)}', '{solverOne}', '{solverTwo}', '{solverThree}', '{solverFour}', '{str(id)}', '{architecture}', '{str(score)}')"
+        cursor.execute(sqlString)  
+        db.commit()
 
         return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 # Retreives ALL Round Results to show aggregate results across all tournaments played before. 
 def allResults():
     try:
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Get all round results from Tournament Stages
-        cursor.execute("SELECT * FROM RoundResult JOIN PlayerBrief ON RoundResult.PlayerId = PlayerBrief.Id WHERE Round > 5")
+        sqlString = "SELECT * FROM RoundResult JOIN PlayerBrief ON RoundResult.PlayerId = PlayerBrief.Id WHERE Round > 5"
+        cursor.execute(sqlString)
         results = cursor.fetchall()
 
         #  pyodbc.Row objects are not json serializable so convert and coerce any values not serializable (like decimals) into strings
         # results = [tuple(row) for row in results] # Saves as a tuple, harder to read on FE
         # json_string = json.dumps(results, default=str)
+        # Note: as of 04/2024 no longer using pyodbc, but leaving this as it converts all 
+        # properties to a lowercase first letter, which the FE expects.
         resultList = []
         for result in results:
-            resultList.append({"id": result.Id, "name": result.Name, "color": result.Color, "score": result.Score, "round": result.Round, "shots": result.Shots, "cost": result.Cost, "solverOne": result.SolverOne, "solverTwo": result.SolverTwo, "solverThree": result.SolverThree, "architecture": result.Architecture, "customPerformanceWeight": result.CustomPerformanceWeight})
+            resultList.append({"id": result['Id'], "name": result['Name'], "color": result['Color'], "score": result['Score'], "round": result['Round'], "shots": result['Shots'], "cost": result['Cost'], "solverOne": result['SolverOne'], "solverTwo": result['SolverTwo'], "solverThree": result['SolverThree'], "architecture": result['Architecture'], "customPerformanceWeight": result['CustomPerformanceWeight']})
 
         # Now return all results
         return  jsonify({"results": resultList})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 # Saves the result of a player playing free roam modules in the playground. includes shots, distance remaining to hole (up to 2 decimal places), solver used, and module selected, as well as the player's id 
 def freeRoamResult():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # Save player's results for a round in the tournament
         # First check that required data is in request, must have valid Id for Player,
         # as well as shot, cost, and round information
@@ -341,25 +405,30 @@ def freeRoamResult():
         solver = data.get('solver')
         module = data.get('module')
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
-        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        sqlString = f"SELECT * FROM PlayerBrief WHERE Id = '{str(id)}'"
+        cursor.execute(sqlString)
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
 
         # Now create new Free Roam Result and insert into its table
-        cursor.execute(f"INSERT INTO FreeRoamResult (Shots, Distance, Solver, Module, PlayerId) VALUES (?, ?, ?, ?, ?)", 
-                       (str(shots), str(distance), solver, module, str(id)))  
-        conn.commit()
+        sqlString = f"INSERT INTO FreeRoamResult (Shots, Distance, Solver, Module, PlayerId) VALUES ('{str(shots)}', '{str(distance)}', '{solver}', '{module}', '{str(id)}')"
+        cursor.execute(sqlString)  
+        db.commit()
 
         return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 # Saves the result of a player Free roam survey 
 # The number stored per module is for a solver as an int that can represent multiple solvers as follows:
@@ -373,6 +442,10 @@ def freeRoamResult():
 # 7 -> Professional, Amateur, and Specialist (could be stored without not sure option in 3 bits!)
 def freeRoamSurvey():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # Save player's results for a round in the tournament
         # First check that required data is in request, must have valid Id for Player,
         # as well as shot, cost, and round information
@@ -385,36 +458,49 @@ def freeRoamSurvey():
         putt = data.get('putt')
         entireHole = data.get('entireHole')
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
-        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        sqlString = f"SELECT * FROM PlayerBrief WHERE Id = '{str(id)}'"
+        cursor.execute(sqlString)
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
 
         # Now create new Free Roam Result and insert into its table
-        cursor.execute(f"INSERT INTO FreeRoamSurvey (Drive, Long, Fairway, Short, Putt, EntireHole, PlayerId) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                       (str(drive), str(long), str(fairway), str(short), str(putt), str(entireHole), str(id)))  
-        conn.commit()
+        sqlString = f"INSERT INTO FreeRoamSurvey (Drive, LongChoice, Fairway, Short, Putt, EntireHole, PlayerId) VALUES ('{str(drive)}', '{str(long)}', '{str(fairway)}', '{str(short)}', '{str(putt)}', '{str(entireHole)}', '{str(id)}')"
+        cursor.execute(sqlString)  
+        db.commit()
 
         return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 
 # Save result of player playing onboarding or offboarding dice game
 def diceResult():
     try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
         # First check that required data is in request, must have valid Id for Player,
         # as well as required Die, whether it is onboarding, and the score.
         data = request.json
         id = data.get('playerId')
         score = data.get('score')
         onboarding = data.get('onboarding')
+        if onboarding:
+            onboarding = 1
+        else:
+            onboarding = 0
         d6 = data.get('d6')
         d8 = data.get('d8')
         d10 = data.get('d10')
@@ -442,22 +528,27 @@ def diceResult():
         # Onboarding bit,
         # Score int
 
-        # Create connection to Azure SQL Database
-        conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-        cursor = conn.cursor()
+        # Create cursot to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
-        cursor.execute(f"SELECT * FROM PlayerBrief WHERE Id = ?", (str(id)))
+        sqlString = f"SELECT * FROM PlayerBrief WHERE Id = '{str(id)}'"
+        cursor.execute(sqlString)
         player = cursor.fetchone()
         if player is None:
             return jsonify({"error": "Player not found"})
 
         # Now create new DiceResult and insert into its table
-        cursor.execute(f"INSERT INTO DiceResult (D6, D8, D10, D12, D20, PlayerId, Onboarding, Score, Reasoning) VALUES  (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                       (str(d6), str(d8), str(d10), str(d12), str(d20), str(id), str(onboarding), str(score), str(reasoning))) 
-        conn.commit()
+        sqlString = f"INSERT INTO DiceResult (D6, D8, D10, D12, D20, PlayerId, Onboarding, Score, Reasoning) VALUES ('{str(d6)}', '{str(d8)}', '{str(d10)}', '{str(d12)}', '{str(d20)}', '{str(id)}', {onboarding}, '{str(score)}', '{str(reasoning)}')"
+        cursor.execute(sqlString) 
+        db.commit()
 
         return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
