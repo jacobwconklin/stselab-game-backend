@@ -51,11 +51,15 @@ CREATE TABLE User (
     -- 7 point familiarity questions:
     ProjectContextFamiliarity int,
     NavyPlatformFamiliarity int,
-    DesignChangeCharacteristicsFamiliarity int
+    DesignChangeCharacteristicsFamiliarity int,
+
+    -- Relevant for admin dashboard:
+    JoinedProjectDate varchar(255),
+    LeftProjectDate varchar(255)
 )
 
 -- table for measurement period (connects records)
-CREATE TABLE topcu.MeasurementPeriod (
+CREATE TABLE MeasurementPeriod (
     Id int AUTO_INCREMENT, 
     PRIMARY KEY (Id),
     Email varchar(255),
@@ -63,6 +67,7 @@ CREATE TABLE topcu.MeasurementPeriod (
     EndDate varchar(255),
     Entered varchar(255),
     TotalDuration int,
+    LastTime bit,
     FOREIGN KEY (Email) REFERENCES User(Email)
 )
 
@@ -78,5 +83,5 @@ CREATE TABLE ActivityRecord (
     Question1 varchar(255),
     Question2 varchar(255),
     Question3 varchar(255),
-    Question4 varchar(255),
+    Question4 varchar(255)
 )

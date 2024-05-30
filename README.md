@@ -2,6 +2,20 @@
 Deployed through Azure, currently live at:
 https://stse-backend.azurewebsites.net/
 
+To deploy do the following:
+
+(Make sure all .sql files are included in "appService.zipIgnorePattern" in settings.json in the .vscode folder. 
+Deploying the app with sql files caused issues before.)
+
+1) Make sure you are added to the Azure Subscription as a contributor
+
+2) Install Azure Tools extension pack in VS Code. (if not installed already)
+
+3) In VS Code with the backend folder opened click:
+    View -> Command Palette -> Azure App Service: Deploy to Web App
+
+Done.
+
 # Running Locally
 
 ```

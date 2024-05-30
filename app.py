@@ -84,14 +84,13 @@ def sendEmail():
         message = data.get('message')
         print("Got message: " + message)
         # Send test email
-        msg = Message("Admin Message",
-                  sender="design.process.survey@gmail.com",
-                  recipients=[email],
-                  html=f"""
-                    <h2>This is a reminder:</h2>
-                    <br />
-                    <b>{message}</b>
-                  """
+        msg = Message(
+            subject="Design Process Survey Admin Message",
+            sender="design.process.survey@gmail.com",
+            recipients=[email],
+            html=f"""
+                <b>{message}</b>
+            """
                   )
         mail.send(msg)
 

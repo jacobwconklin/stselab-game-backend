@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT, VT_MYSQL_PASSWORD_SALT
+from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_DESIGN_PROCESS_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT, VT_MYSQL_PASSWORD_SALT
 import pymysql
 import pymysql.cursors
 import hashlib
@@ -31,9 +31,11 @@ def saveNewUser():
 
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
 
         progress = "Start of function"
+
+        print(progress)
         
         data = sanitizeJson(request.json)
         email = data.get('email')
@@ -77,27 +79,33 @@ def saveNewUser():
         projectContextFamiliarity = data.get('projectContextFamiliarity')
         navyPlatformFamiliarity = data.get('navyPlatformFamiliarity')
         designChangeCharacteristicsFamiliarity = data.get('designChangeCharacteristicsFamiliarity')
+        joinedProjectDate = data.get('joinedProjectDate')
 
         
         progress = "got params"
+        print(progress)
         
         # Create connection to VT MySQL Database
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         progress = "got cursor"
+        print(progress)
 
-        sqlString = f"INSERT INTO User (Email, Password, Gender, Age, Ethnicity, Employer, Team, Title, BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, AerodynamicsSpecialization, ComputerScienceSpecialization, ElectricalEngineeringSpecialization, ElectromagneticsSpecialization, EnvironmentalTestingSpecialization, LogisticsSpecialization, ManufacturingSpecialization, MechanicalDesignSpecialization, OperationsResearchSpecialization, ProjectManagementSpecialization, SystemsEngineeringSpecialization, StructuralAnalysisSpecialization, ThreatAnalysisSpecialization, OtherSpecializationName, OtherSpecialization, ShipyardAgency, NavseaAgency, NswcDahlgrenAgency, NswcCarderockAgency, OpnavAgency, PentagonAgency, OtherNswcAgencyName, OtherAgency, RiskAnalysisExperience, SupplierExperience, ProjectContextFamiliarity, NavyPlatformFamiliarity, DesignChangeCharacteristicsFamiliarity ) VALUES ('{email}', '{hashPassword(password)}', '{gender}', '{age}', '{ethnicity}', '{employer}', '{team}', '{title}', '{bachelorsEducation}', '{mastersEducation}', '{doctorateEducation}', '{otherEducation}', '{otherEducationName}', '{aerodynamicsSpecialization}', '{computerScienceSpecialization}', '{electricalEngineeringSpecialization}', '{electromagneticsSpecialization}', '{environmentalTestingSpecialization}', '{logisticsSpecialization}', '{manufacturingSpecialization}', '{mechanicalDesignSpecialization}', '{operationsResearchSpecialization}', '{projectManagementSpecialization}', '{systemsEngineeringSpecialization}', '{structuralAnalysisSpecialization}', '{threatAnalysisSpecialization}', '{otherSpecializationName}', '{otherSpecialization}', '{shipyardAgency}', '{navseaAgency}', '{nswcDahlgrenAgency}', '{nswcCarderockAgency}', '{opnavAgency}', '{pentagonAgency}', '{otherNswcAgencyName}', '{otherAgency}', '{riskAnalysisExperience}', '{supplierExperience}', '{projectContextFamiliarity}', '{navyPlatformFamiliarity}', '{designChangeCharacteristicsFamiliarity}')"
+        sqlString = f"INSERT INTO User (Email, Gender, Age, Ethnicity, Employer, Team, Title, BachelorsEducation, MastersEducation, DoctorateEducation, OtherEducation, OtherEducationName, AerodynamicsSpecialization, ComputerScienceSpecialization, ElectricalEngineeringSpecialization, ElectromagneticsSpecialization, EnvironmentalTestingSpecialization, LogisticsSpecialization, ManufacturingSpecialization, MechanicalDesignSpecialization, OperationsResearchSpecialization, ProjectManagementSpecialization, SystemsEngineeringSpecialization, StructuralAnalysisSpecialization, ThreatAnalysisSpecialization, OtherSpecializationName, OtherSpecialization, ShipyardAgency, NavseaAgency, NswcDahlgrenAgency, NswcCarderockAgency, OpnavAgency, PentagonAgency, OtherNswcAgencyName, OtherAgency, RiskAnalysisExperience, SupplierExperience, ProjectContextFamiliarity, NavyPlatformFamiliarity, DesignChangeCharacteristicsFamiliarity, JoinedProjectDate ) VALUES ('{email}', '{gender}', '{age}', '{ethnicity}', '{employer}', '{team}', '{title}', '{bachelorsEducation}', '{mastersEducation}', '{doctorateEducation}', '{otherEducation}', '{otherEducationName}', '{aerodynamicsSpecialization}', '{computerScienceSpecialization}', '{electricalEngineeringSpecialization}', '{electromagneticsSpecialization}', '{environmentalTestingSpecialization}', '{logisticsSpecialization}', '{manufacturingSpecialization}', '{mechanicalDesignSpecialization}', '{operationsResearchSpecialization}', '{projectManagementSpecialization}', '{systemsEngineeringSpecialization}', '{structuralAnalysisSpecialization}', '{threatAnalysisSpecialization}', '{otherSpecializationName}', '{otherSpecialization}', '{shipyardAgency}', '{navseaAgency}', '{nswcDahlgrenAgency}', '{nswcCarderockAgency}', '{opnavAgency}', '{pentagonAgency}', '{otherNswcAgencyName}', '{otherAgency}', '{riskAnalysisExperience}', '{supplierExperience}', '{projectContextFamiliarity}', '{navyPlatformFamiliarity}', '{designChangeCharacteristicsFamiliarity}', '{joinedProjectDate}')"
 
         
         progress = "made sqlstring: " + sqlString
+        print(progress)
 
         cursor.execute(sqlString)
 
         progress = "executed sqlstring"
+        print(progress)
 
         db.commit()
 
         progress = "committed"
+        print(progress)
 
         return jsonify({"success": True})
 
@@ -122,7 +130,7 @@ def saveNewMeasurementPeriod():
             host=VT_MYSQL_HOST,
             user=VT_MYSQL_USER,
             password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
+            database=VT_MYSQL_DESIGN_PROCESS_DB,
             port=VT_MYSQL_PORT
         )
 
@@ -148,7 +156,7 @@ def saveNewMeasurementPeriod():
         #     return jsonify({"error": "User not found"})
         
         # Now create new Measurement Period and insert into its table
-        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration, LastTime) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}', '{lastTime}')"
+        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration, LastTime) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}', {lastTime})"
         cursor.execute(sqlString)
         db.commit()
             
@@ -191,7 +199,7 @@ def checkEmailExists():
             host=VT_MYSQL_HOST,
             user=VT_MYSQL_USER,
             password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
+            database=VT_MYSQL_DESIGN_PROCESS_DB,
             port=VT_MYSQL_PORT
         )
         
@@ -227,7 +235,7 @@ def checkAdminCredentials(email, password = None, token = None):
             host=VT_MYSQL_HOST,
             user=VT_MYSQL_USER,
             password=VT_MYSQL_PASSWORD,
-            database=VT_MYSQL_DB,
+            database=VT_MYSQL_DESIGN_PROCESS_DB,
             port=VT_MYSQL_PORT
         )
 
@@ -273,54 +281,6 @@ def checkLogin():
     except Exception as e:
         print(e)
         return jsonify({"success": False, "exception": str(e)})    
-
-# retreive all user records from db
-def getAllUserRecords():
-    try:
-        db = None
-        cursor = None
-
-        data = sanitizeJson(request.json)
-        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
-            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
-
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
-        cursor = db.cursor(pymysql.cursors.DictCursor)
-
-        # TODO may want to apply a join / filter to only get users with at least one measurement period
-        cursor.execute(f"SELECT Email FROM User")
-        users = cursor.fetchall()
-        # For each user, pull all measurement periods and calculate latest, total hours, and total number of periods
-        finalUsers = []
-        for user in users:
-            cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{user['Email']}'")
-            periods = cursor.fetchall()
-            user['numberOfPeriods'] = len(periods)
-            totalHoursForUser = 0
-            user['lastRecordedPeriodEndDate'] = None
-            user['lastRecordedPeriodStartDate'] = None
-            for period in periods:
-                # No need to iterate through every activity here thanks to totalDuration cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = '{period['Id']}'")
-                # activities = cursor.fetchall()
-                # for activity in activities:
-                #     user['totalHours'] += activity['Duration']
-                if user['lastRecordedPeriodEndDate'] is None or period['EndDate'] > user['lastRecordedPeriodEndDate']:
-                    user['lastRecordedPeriodEndDate'] = period['EndDate']
-                    user['lastRecordedPeriodStartDate'] = period['StartDate']
-                if period['TotalDuration']:
-                    totalHoursForUser += period['TotalDuration']
-            user['totalHoursRecorded'] = totalHoursForUser
-            finalUsers.append(user)
-
-        return jsonify({"success": True, "data": finalUsers})
-    except Exception as e:
-        print(e)
-        return jsonify({"success": False, "exception": str(e)})    
-    finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
     
 # retreive detiled user information from db
 def getUserDetails():
@@ -332,7 +292,7 @@ def getUserDetails():
         if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
             return jsonify({"success": False, "error": "Invalid Admin Credentials"})
         
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         cursor.execute(f"SELECT * FROM User WHERE Email = '{data.get('email')}'")
@@ -357,7 +317,7 @@ def getAllActivityRecords():
         if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
             return jsonify({"success": False, "error": "Invalid Admin Credentials"})
 
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         cursor.execute(f"SELECT * FROM ActivityRecord")
@@ -382,7 +342,7 @@ def getActivityRecordsForPeriod():
         if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
             return jsonify({"success": False, "error": "Invalid Admin Credentials"})
 
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = '{data.get('measurementPeriod')}'")
@@ -408,7 +368,7 @@ def getAllMeasurementPeriods():
         if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
             return jsonify({"success": False, "error": "Invalid Admin Credentials"})
 
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         cursor.execute(f"SELECT * FROM MeasurementPeriod")
@@ -433,12 +393,69 @@ def getAllMeasurementPeriodsForUser():
         if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
             return jsonify({"success": False, "error": "Invalid Admin Credentials"})
         
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{data.get('email')}'")
         records = cursor.fetchall()
+
+        for record in records:
+            if (record['LastTime'] == 1):
+                record['LastTime'] = True
+            else:
+                record['LastTime'] = False
+
         return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+# retreive all user records from db
+def getAllUserRecords():
+    try:
+        db = None
+        cursor = None
+
+        data = sanitizeJson(request.json)
+        if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
+            return jsonify({"success": False, "error": "Invalid Admin Credentials"})
+
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        # TODO may want to apply a join / filter to only get users with at least one measurement period
+        cursor.execute(f"SELECT Email, JoinedProjectDate, LeftProjectDate FROM User")
+        users = cursor.fetchall()
+        # For each user, pull all measurement periods and calculate latest, total hours, and total number of periods
+        finalUsers = []
+        for user in users:
+            # add email, joined project date, and left project date to finalUsers in lowercase
+            newUser = {'email': user['Email'], 'joinedProjectDate': user['JoinedProjectDate'], 'leftProjectDate': user['LeftProjectDate']}
+            cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{user['Email']}'")
+            periods = cursor.fetchall()
+            newUser['numberOfPeriods'] = len(periods)
+            totalHoursForUser = 0
+            newUser['lastRecordedPeriodEndDate'] = None
+            newUser['lastRecordedPeriodStartDate'] = None
+            for period in periods:
+                # No need to iterate through every activity here thanks to totalDuration cursor.execute(f"SELECT * FROM ActivityRecord WHERE MeasurementPeriod = '{period['Id']}'")
+                # activities = cursor.fetchall()
+                # for activity in activities:
+                #     user['totalHours'] += activity['Duration']
+                if newUser['lastRecordedPeriodEndDate'] is None or period['EndDate'] > newUser['lastRecordedPeriodEndDate']:
+                    newUser['lastRecordedPeriodEndDate'] = period['EndDate']
+                    newUser['lastRecordedPeriodStartDate'] = period['StartDate']
+                if period['TotalDuration']:
+                    totalHoursForUser += period['TotalDuration']
+            newUser['totalHoursRecorded'] = totalHoursForUser
+            finalUsers.append(newUser)
+
+        return jsonify({"success": True, "data": finalUsers})
     except Exception as e:
         print(e)
         return jsonify({"success": False, "exception": str(e)})    
@@ -459,14 +476,21 @@ def getMeasurementPeriodsInRange():
         if not checkAdminCredentials(email=data.get('adminEmail'), token=data.get('token')):
             return jsonify({"success": False, "error": "Invalid Admin Credentials"})
         
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DB, port=VT_MYSQL_PORT)
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         earliestStartDate = data.get('earliestStartDate')
         latestStartDate = data.get('latestStartDate')
 
         cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE TotalDuration > 0 AND StartDate > '{earliestStartDate}' AND StartDate < '{latestStartDate}'")
+
         records = cursor.fetchall()
+        for record in records:
+            if (record['LastTime'] == 1):
+                record['LastTime'] = True
+            else:
+                record['LastTime'] = False
+
         return jsonify({"success": True, "data": records})
     except Exception as e:
         print(e)
