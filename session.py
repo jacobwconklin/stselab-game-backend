@@ -218,12 +218,12 @@ def roundResults():
             if score:
                 playerList[-1]["shots"] = score['Shots']
                 playerList[-1]["cost"] = score['Cost']
-                playerList[-1]["solverOne"] = getattr(score, 'SolverOne', None)
-                playerList[-1]["solverTwo"] = getattr(score, 'SolverTwo', None)
-                playerList[-1]["solverThree"] = getattr(score, 'SolverThree', None)
+                playerList[-1]["solverOne"] = score.get('SolverOne', None)
+                playerList[-1]["solverTwo"] = score.get('SolverTwo', None)
+                playerList[-1]["solverThree"] = score.get('SolverThree', None)
                 playerList[-1]["architecture"] = score['Architecture']
                 playerList[-1]["score"] = score['Score']
-                playerList[-1]["customPerformanceWeight"] = getattr(score, 'CustomPerformanceWeight', None)
+                playerList[-1]["customPerformanceWeight"] = score.get('CustomPerformanceWeight', None)
 
         return jsonify({"success": True, "results": playerList})
     except Exception as e:
@@ -267,8 +267,8 @@ def finalResults():
             if scores:
                 for score in scores:
                     playerList[-1]["scores"].append({"shots": score['Shots'], "cost": score['Cost'], "score": score['Score'], "round": score['Round'],
-                        "solverOne": getattr(score, 'SolverOne', False), "solverTwo": getattr(score, 'SolverTwo', False),
-                        "solverThree": getattr(score, 'SolverThree', False), "architecture": score['Architecture']})
+                        "solverOne": score.get('SolverOne', None), "solverTwo": score.get('SolverTwo', None),
+                        "solverThree": score.get('SolverThree', None), "architecture": score['Architecture']})
 
         return jsonify({"success": True, "results": playerList})
     except Exception as e:

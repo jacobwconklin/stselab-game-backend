@@ -8,7 +8,6 @@ import requests
 # Stse-lab Golf Project Functions:
 from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults, armRoundResult, diceResult
 from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults
-from simulation import playDrive, playLong, playFairway, playShort, playPutt, h_arch, lp_arch, dap_arch, ds_arch
 
 # Navy Design Process Project Functions:
 from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists, getMeasurementPeriodsInRange
@@ -187,20 +186,6 @@ app.add_url_rule('/player/allResults', 'player/allResults', allResults, methods=
 # Mechanical Arm Mission:
 app.add_url_rule('/player/armRoundResult', 'player/armRoundResult', armRoundResult, methods=['POST'])
 
-# Deployed Simulation is only avialable via http, so the front-end cannot make requests to it 
-# as it would be mixed content. Without a registered domain name and SSL certificate the droplet
-# it is hosted on cannot be made into an https API. Therefore calls must come from the backend, so 
-# the front end will make requests here just to pass them on to the simulation.
-# simulation routes handled in simulation.py
-app.add_url_rule('/playDrive', 'playDrive', playDrive, methods=['POST'])
-app.add_url_rule('/playLong', 'playLong', playLong, methods=['POST'])
-app.add_url_rule('/playFairway', 'playFairway', playFairway, methods=['POST'])
-app.add_url_rule('/playShort', 'playShort', playShort, methods=['POST'])
-app.add_url_rule('/playPutt', 'playPutt', playPutt, methods=['POST'])
-app.add_url_rule('/h_arch', 'h_arch', h_arch, methods=['POST'])
-app.add_url_rule('/lp_arch', 'lp_arch', lp_arch, methods=['POST'])
-app.add_url_rule('/dap_arch', 'dap_arch', dap_arch, methods=['POST'])
-app.add_url_rule('/ds_arch', 'ds_arch', ds_arch, methods=['POST'])
 
 
 # For Navy Design Process Project:

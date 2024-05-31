@@ -385,7 +385,7 @@ def getAllMeasurementPeriods():
 
 # retreive all measurement periods for a specified user from db
 def getAllMeasurementPeriodsForUser():
-    try:
+    try: 
         db = None
         cursor = None
 
