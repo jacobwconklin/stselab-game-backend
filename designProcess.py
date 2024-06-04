@@ -140,10 +140,6 @@ def saveNewMeasurementPeriod():
         startDate = sanitizeInput(data.get('startDate'))
         endDate = sanitizeInput(data.get('endDate'))
         entered = sanitizeInput(data.get('entered'))
-        lastTime = 0
-        if data.get('lastTime') == True:
-            lastTime = 1
-        print("lastTime: ", lastTime)
         totalDuration = sanitizeInput(data.get('totalDuration'))
 
         # Create connection to VT MySQL Database
@@ -156,7 +152,7 @@ def saveNewMeasurementPeriod():
         #     return jsonify({"error": "User not found"})
         
         # Now create new Measurement Period and insert into its table
-        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration, LastTime) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}', {lastTime})"
+        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}')"
         cursor.execute(sqlString)
         db.commit()
             
@@ -399,12 +395,6 @@ def getAllMeasurementPeriodsForUser():
         cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{data.get('email')}'")
         records = cursor.fetchall()
 
-        for record in records:
-            if (record['LastTime'] == 1):
-                record['LastTime'] = True
-            else:
-                record['LastTime'] = False
-
         return jsonify({"success": True, "data": records})
     except Exception as e:
         print(e)
@@ -485,11 +475,6 @@ def getMeasurementPeriodsInRange():
         cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE TotalDuration > 0 AND StartDate > '{earliestStartDate}' AND StartDate < '{latestStartDate}'")
 
         records = cursor.fetchall()
-        for record in records:
-            if (record['LastTime'] == 1):
-                record['LastTime'] = True
-            else:
-                record['LastTime'] = False
 
         return jsonify({"success": True, "data": records})
     except Exception as e:

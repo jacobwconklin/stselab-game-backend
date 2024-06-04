@@ -11,7 +11,13 @@ Deploying the app with sql files caused issues before.)
 
 2) Install Azure Tools extension pack in VS Code. (if not installed already)
 
-3) In VS Code with the backend folder opened click:
+3) ALWAYS RUN
+```
+git pull
+```
+BEFORE DEPLOYING (in case other contributor / team has made necessary changes) and test version before deploying. 
+
+4) In VS Code with the backend folder opened click:
     View -> Command Palette -> Azure App Service: Deploy to Web App
 
 Done.
