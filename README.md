@@ -17,7 +17,9 @@ git pull
 ```
 BEFORE DEPLOYING (in case other contributor / team has made necessary changes) and test version before deploying. 
 
-4) In VS Code with the backend folder opened click:
+4) Push changes to GIT. Either in terminal or using VSCode. This is so that your changes persist if another team deploys 
+
+5) In VS Code with the backend folder opened click:
     View -> Command Palette -> Azure App Service: Deploy to Web App
 
 Done.
