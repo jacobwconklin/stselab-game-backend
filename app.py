@@ -7,18 +7,16 @@ import requests
 
 # Stse-lab Golf Project Functions:
 from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurvey, allResults, armRoundResult, diceResult
-from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults
+from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults, jumpToArmMission
 
 # Navy Design Process Project Functions:
-from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists, getMeasurementPeriodsInRange
+from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists, getMeasurementPeriodsInRange, leaveProject, checkDuplicateMeasurementPeriod
 
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
 from flask_cors import CORS
 from flask_mail import Mail
 from flask_mail import Message
-
-# TODO prevent SQL injections (probably regex on sql strings)
 
 app = Flask(__name__)
 CORS(app)
@@ -173,6 +171,7 @@ app.add_url_rule('/session/surveyssubmitted', 'session/surveyssubmitted', survey
 # Mechanical Arm Mission:
 app.add_url_rule('/session/armroundresults', 'session/armroundresults', armRoundResults, methods=['POST'])
 app.add_url_rule('/session/armfinalresults', 'session/armfinalresults', armFinalResults, methods=['POST'])
+app.add_url_rule('/session/jumptoarmmission', 'session/jumptoarmmission', jumpToArmMission, methods=['POST'])
 
 # User routes handled in users.py
 app.add_url_rule('/player/host', 'player/host', host, methods=['POST'])
@@ -200,6 +199,8 @@ app.add_url_rule('/navydp/getAllUserRecords', 'getAllUserRecords', getAllUserRec
 app.add_url_rule('/navydp/getUserDetails', 'getUserDetails', getUserDetails, methods=['POST'])
 app.add_url_rule('/navydp/verifyEmail', 'verifyEmail', checkEmailExists, methods=['POST'])
 app.add_url_rule('/navydp/getMeasurementPeriodsInRange', 'getMeasurementPeriodsInRange', getMeasurementPeriodsInRange, methods=['POST'])
+app.add_url_rule('/navydp/leaveProject', 'leaveProject', leaveProject, methods=['POST'])
+app.add_url_rule('/navydp/checkDuplicateMeasurementPeriod', 'checkDuplicateMeasurementPeriod', checkDuplicateMeasurementPeriod, methods=['POST'])
 
 if __name__ == '__main__':
     app.run()

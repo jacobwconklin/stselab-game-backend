@@ -141,40 +141,115 @@ def saveNewMeasurementPeriod():
         endDate = sanitizeInput(data.get('endDate'))
         entered = sanitizeInput(data.get('entered'))
         totalDuration = sanitizeInput(data.get('totalDuration'))
+        duplicateDateDecision = data.get('duplicateDateDecision')
 
         # Create connection to VT MySQL Database
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that user exists
-        # cursor.execute(f"SELECT * FROM User WHERE email = '{(str(email))}'")
-        # user = cursor.fetchone()
-        # if user is None:
-        #     return jsonify({"error": "User not found"})
+        sqlString = f"SELECT * FROM User WHERE Email = '{email}'"
+        cursor.execute(sqlString)
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "User not found"})
         
-        # Now create new Measurement Period and insert into its table
-        sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}')"
-        cursor.execute(sqlString)
-        db.commit()
+        # IF record is a duplicate, then duplicate date decision will be '1' to add the activities to the existing record, or '2' to overwrite the existing record. A '0' indicates it is not a duplicate.
+        if duplicateDateDecision == 1:
+            # Get the existing measurement period
+            # need to get id of measurement period to insert into activity record
+            sqlString = f"SELECT * FROM MeasurementPeriod WHERE Email = '{email}' AND StartDate = '{startDate}' AND EndDate = '{endDate}'"
+            cursor.execute(sqlString)
+            existingMeasurementPeriod = cursor.fetchone()
+            if existingMeasurementPeriod is None:
+                return jsonify({"error": "No existing measurement period found for this date range"})
             
-        # need to get id of measurement period to insert into activity record
-        sqlString = "SELECT LAST_INSERT_ID()"
-        cursor.execute(sqlString)
-        newMeasurementPeriod = cursor.fetchone()
-        db.commit()
-
-        numberOfActivities = 0
-        for rawActivity in activities:
-            activity = sanitizeJson(rawActivity)
-            q1 = activity.get('question1', None)
-            q2 = activity.get('question2', None)
-            q3 = activity.get('question3', None)
-            q4 = activity.get('question4', None)
-            sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, Question4) VALUES ('{newMeasurementPeriod['LAST_INSERT_ID()']}', '{activity['type']}', '{activity['duration']}', '{q1}', '{q2}', '{q3}', '{q4}')"
+            # Update measurement period with the sum of the new total duration and the existing total duration
+            newTotalDuration = int(existingMeasurementPeriod['TotalDuration']) + int(totalDuration)
+            sqlString = f"UPDATE MeasurementPeriod SET TotalDuration = '{newTotalDuration}' WHERE Id = '{existingMeasurementPeriod['Id']}'"
             cursor.execute(sqlString)
             db.commit()
-            numberOfActivities += 1
+            
+            # Now save all of the new activities to the same old measurement period
+            numberOfActivities = 0
+            for rawActivity in activities:
+                activity = sanitizeJson(rawActivity)
+                q1 = activity.get('question1', None)
+                q2 = activity.get('question2', None)
+                q3 = activity.get('question3', None)
+                q4 = activity.get('question4', None)
+                sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, Question4) VALUES ('{existingMeasurementPeriod['Id']}', '{activity['type']}', '{activity['duration']}', '{q1}', '{q2}', '{q3}', '{q4}')"
+                cursor.execute(sqlString)
+                db.commit()
+                numberOfActivities += 1
 
-        return jsonify({"success": True, "number-of-activities": numberOfActivities})
+            return jsonify({"success": True, "number-of-activities": numberOfActivities})
+
+        elif duplicateDateDecision == 2:
+            # Delete the existing measurement period and all associated activity records, then add the new ones. Will have to delete
+            # activities first as cascading delete is not set up
+            sqlString = f"SELECT Id FROM MeasurementPeriod WHERE Email = '{email}' AND StartDate = '{startDate}' AND EndDate = '{endDate}'"
+            cursor.execute(sqlString)
+            existingMeasurementPeriod = cursor.fetchone()
+            if existingMeasurementPeriod is None:
+                return jsonify({"error": "No existing measurement period found for this date range"})
+            existingMeasurementPeriodId = existingMeasurementPeriod['Id']
+            sqlString = f"DELETE FROM ActivityRecord WHERE MeasurementPeriod = '{existingMeasurementPeriodId}'"
+            cursor.execute(sqlString)
+            db.commit()
+            sqlString = f"DELETE FROM MeasurementPeriod WHERE Id = '{existingMeasurementPeriodId}'"
+            cursor.execute(sqlString)
+
+            # Now save all of the new info
+            sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}')"
+            cursor.execute(sqlString)
+            db.commit()
+                
+            # need to get id of measurement period to insert into activity record
+            sqlString = "SELECT LAST_INSERT_ID()"
+            cursor.execute(sqlString)
+            newMeasurementPeriod = cursor.fetchone()
+            db.commit()
+
+            numberOfActivities = 0
+            for rawActivity in activities:
+                activity = sanitizeJson(rawActivity)
+                q1 = activity.get('question1', None)
+                q2 = activity.get('question2', None)
+                q3 = activity.get('question3', None)
+                q4 = activity.get('question4', None)
+                sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, Question4) VALUES ('{newMeasurementPeriod['LAST_INSERT_ID()']}', '{activity['type']}', '{activity['duration']}', '{q1}', '{q2}', '{q3}', '{q4}')"
+                cursor.execute(sqlString)
+                db.commit()
+                numberOfActivities += 1
+
+            return jsonify({"success": True, "number-of-activities": numberOfActivities})
+
+        else:
+            # Just save the new info
+            # Now create new Measurement Period and insert into its table
+            sqlString = f"INSERT INTO MeasurementPeriod (Email, StartDate, EndDate, Entered, TotalDuration) VALUES ('{email}', '{startDate}', '{endDate}', '{entered}', '{totalDuration}')"
+            cursor.execute(sqlString)
+            db.commit()
+                
+            # need to get id of measurement period to insert into activity record
+            sqlString = "SELECT LAST_INSERT_ID()"
+            cursor.execute(sqlString)
+            newMeasurementPeriod = cursor.fetchone()
+            db.commit()
+
+            numberOfActivities = 0
+            for rawActivity in activities:
+                activity = sanitizeJson(rawActivity)
+                q1 = activity.get('question1', None)
+                q2 = activity.get('question2', None)
+                q3 = activity.get('question3', None)
+                q4 = activity.get('question4', None)
+                sqlString = f"INSERT INTO ActivityRecord (MeasurementPeriod, Type, Duration, Question1, Question2, Question3, Question4) VALUES ('{newMeasurementPeriod['LAST_INSERT_ID()']}', '{activity['type']}', '{activity['duration']}', '{q1}', '{q2}', '{q3}', '{q4}')"
+                cursor.execute(sqlString)
+                db.commit()
+                numberOfActivities += 1
+
+            return jsonify({"success": True, "number-of-activities": numberOfActivities})
 
     except Exception as e:
         print(e)
@@ -472,11 +547,70 @@ def getMeasurementPeriodsInRange():
         earliestStartDate = data.get('earliestStartDate')
         latestStartDate = data.get('latestStartDate')
 
-        cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE TotalDuration > 0 AND StartDate > '{earliestStartDate}' AND StartDate < '{latestStartDate}'")
+        cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE TotalDuration > 0 AND StartDate >= '{earliestStartDate}' AND StartDate <= '{latestStartDate}'")
 
         records = cursor.fetchall()
 
         return jsonify({"success": True, "data": records})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+# check if user already has a measurement period for the current date range
+def checkDuplicateMeasurementPeriod():
+    try:
+        db = None
+        cursor = None
+
+        data = sanitizeJson(request.json)
+
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        email = data.get('email')
+        startDate = data.get('startDate')
+        endDate = data.get('endDate')
+
+        cursor.execute(f"SELECT * FROM MeasurementPeriod WHERE Email = '{email}' AND StartDate = '{startDate}' AND EndDate = '{endDate}'")
+        existingRecord = cursor.fetchone()
+
+        isDuplicate = False
+        if existingRecord:
+            isDuplicate = True
+
+        return jsonify({"success": True, "isDuplicate": isDuplicate})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+# Save to database the date that a user is leaving the project
+def leaveProject():
+    try:
+        db = None
+        cursor = None
+
+        data = sanitizeJson(request.json)
+
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        email = data.get('email')
+        leaveProjectDate = data.get('leaveProjectDate')
+
+        cursor.execute(f"UPDATE User SET LeftProjectDate = '{leaveProjectDate}' WHERE Email = '{email}'")
+        db.commit()
+
+        return jsonify({"success": True})
     except Exception as e:
         print(e)
         return jsonify({"success": False, "exception": str(e)})    

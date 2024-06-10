@@ -24,7 +24,7 @@ def sessionStatus():
         sessionId = data.get('sessionId')
         playerId = data.get('playerId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Save information about session itself
@@ -63,7 +63,7 @@ def playersInSession():
         data = request.json
         sessionId = data.get('sessionId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Save information about session itself
@@ -117,7 +117,7 @@ def endSession():
         data = request.json
         sessionId = data.get('sessionId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Save information about session itself
@@ -143,6 +143,42 @@ def endSession():
         if (db != None):
             db.close()
     
+# enpoint only used once per session to skip the golf game if desired by the host
+def jumpToArmMission():
+    try:
+        db = None
+        cursor = None
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        
+        # First check that required data is in request, must have valid sessionId
+        # I have decided on using round number to determine position in the game. 
+        data = request.json
+        sessionId = data.get('sessionId')
+
+        # Create cursor to perform SQL operations on VTMySQL DB
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        # Ensure session exists
+        sqlString = f"SELECT * FROM Session WHERE JoinCode = '{sessionId}'"
+        cursor.execute(sqlString)
+        session = cursor.fetchone()
+        if session is None:
+            return jsonify({"error": "Session not found"})
+        
+        mechanicalArmStartingRoundNumber = 11 # IMPORTANT!! Update this if the round number ever changes on the FE
+        sqlString = f"UPDATE Session SET Round = '{mechanicalArmStartingRoundNumber}' WHERE JoinCode = '{sessionId}'"
+        cursor.execute(sqlString)
+        db.commit()
+
+        return jsonify({"success": True, "round": session['Round'] + 1})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
     
 # Moves session to the next round, only host can call this
 # Will update the round number, and the EndDate if the last round has been played
@@ -157,7 +193,7 @@ def advanceSession():
         data = request.json
         sessionId = data.get('sessionId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Ensure session exists
@@ -194,7 +230,7 @@ def roundResults():
         sessionId = data.get('sessionId')
         round = data.get('round')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
         
         # Check that players exist with matching sessionId
@@ -246,7 +282,7 @@ def finalResults():
         data = request.json
         sessionId = data.get('sessionId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
         
         # Check that players exist with matching sessionId
@@ -266,9 +302,15 @@ def finalResults():
             scores = cursor.fetchall()
             if scores:
                 for score in scores:
-                    playerList[-1]["scores"].append({"shots": score['Shots'], "cost": score['Cost'], "score": score['Score'], "round": score['Round'],
-                        "solverOne": score.get('SolverOne', None), "solverTwo": score.get('SolverTwo', None),
-                        "solverThree": score.get('SolverThree', None), "architecture": score['Architecture']})
+                    playerList[-1]["scores"].append({
+                        "shots": score['Shots'], 
+                        "cost": score['Cost'], 
+                        "score": score['Score'], 
+                        "round": score['Round'],
+                        "solverOne": score.get('SolverOne', None), 
+                        "solverTwo": score.get('SolverTwo', None),
+                        "solverThree": score.get('SolverThree', None), 
+                        "architecture": score['Architecture']})
 
         return jsonify({"success": True, "results": playerList})
     except Exception as e:
@@ -294,7 +336,7 @@ def armRoundResults():
         round = data.get('round')
 
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
         
         # Check that players exist with matching sessionId
@@ -318,10 +360,10 @@ def armRoundResults():
             if score:
                 playerList[-1]["weight"] = score['Grams']
                 playerList[-1]["cost"] = score['Cost']
-                playerList[-1]["solverOne"] = getattr(score, 'SolverOne', None)
-                playerList[-1]["solverTwo"] = getattr(score, 'SolverTwo', None)
-                playerList[-1]["solverThree"] = getattr(score, 'SolverThree', None)
-                playerList[-1]["solverFour"] = getattr(score, 'SolverFour', None)
+                playerList[-1]["solverOne"] = score.get('SolverOne', None)
+                playerList[-1]["solverTwo"] = score.get('SolverTwo', None)
+                playerList[-1]["solverThree"] = score.get('SolverThree', None)
+                playerList[-1]["solverFour"] = score.get('SolverFour', None)
                 playerList[-1]["architecture"] = score['Architecture']
                 playerList[-1]["score"] = score['Score']
 
@@ -346,7 +388,7 @@ def armFinalResults():
         data = request.json
         sessionId = data.get('sessionId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
         
         # Check that players exist with matching sessionId
@@ -366,9 +408,15 @@ def armFinalResults():
             scores = cursor.fetchall()
             if scores:
                 for score in scores:
-                    playerList[-1]["scores"].append({"weight": score['Grams'], "cost": score['Cost'], "score": score['Score'], "round": score['Round'],
-                        "solverOne": getattr(score, 'SolverOne', False), "solverTwo": getattr(score, 'SolverTwo', False),
-                        "solverThree": getattr(score, 'SolverThree', False), "solverFour": getattr(score, 'SolverFour', False), 
+                    playerList[-1]["scores"].append({
+                        "weight": score['Grams'], 
+                        "cost": score['Cost'], 
+                        "score": score['Score'], 
+                        "round": score['Round'],
+                        "solverOne": score.get('SolverOne', None),
+                        "solverTwo": score.get('SolverTwo', None),
+                        "solverThree": score.get('SolverThree', None),
+                        "solverFour": score.get('SolverFour', None),
                         "architecture": score['Architecture']})
 
         return jsonify({"success": True, "results": playerList})
@@ -392,7 +440,7 @@ def surveysSubmitted():
         data = request.json
         sessionId = data.get('sessionId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
         
         # Check that players exist with matching sessionId
