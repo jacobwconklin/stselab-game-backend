@@ -501,7 +501,11 @@ def getMeasurementPeriodsInRange():
         if (db != None):
             db.close()
 
-
+def exitSurvey ():
+    data = request.json
+    name = data.get("name")
+    print(name)
+    return jsonify({"success": True})
 
 '''
 Using pymysql cursor:
