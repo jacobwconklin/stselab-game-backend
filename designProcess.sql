@@ -84,3 +84,12 @@ CREATE TABLE ActivityRecord (
     Question3 varchar(255),
     Question4 varchar(255)
 )
+
+-- Table for example exit survey
+CREATE TABLE ExitSurvey (
+    Id int AUTO_INCREMENT,
+    PRIMARY KEY (Id),
+    Username varchar(255),
+    Email varchar(255),
+    FOREIGN KEY (Email) REFERENCES User(Email)
+)

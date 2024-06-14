@@ -10,11 +10,8 @@ from users import host, join, roundResult, remove, freeRoamResult, freeRoamSurve
 from session import sessionStatus, advanceSession, roundResults, finalResults, surveysSubmitted, playersInSession, endSession, armFinalResults, armRoundResults, jumpToArmMission
 
 # Navy Design Process Project Functions:
-<<<<<<< HEAD
 from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists, getMeasurementPeriodsInRange, exitSurvey
-=======
 from designProcess import saveNewUser, saveNewMeasurementPeriod, checkLogin, getAllActivityRecords, getAllMeasurementPeriods, getActivityRecordsForPeriod, getAllMeasurementPeriodsForUser, getAllUserRecords, getUserDetails, checkEmailExists, getMeasurementPeriodsInRange, leaveProject, checkDuplicateMeasurementPeriod
->>>>>>> 648ca5ca0c00d041e7322a4c15c0e3fe60d19379
 
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify, json)
@@ -150,12 +147,9 @@ app.add_url_rule('/navydp/getAllUserRecords', 'getAllUserRecords', getAllUserRec
 app.add_url_rule('/navydp/getUserDetails', 'getUserDetails', getUserDetails, methods=['POST'])
 app.add_url_rule('/navydp/verifyEmail', 'verifyEmail', checkEmailExists, methods=['POST'])
 app.add_url_rule('/navydp/getMeasurementPeriodsInRange', 'getMeasurementPeriodsInRange', getMeasurementPeriodsInRange, methods=['POST'])
-<<<<<<< HEAD
 app.add_url_rule('/navydp/exitSurvey', 'exitSurvey', exitSurvey, methods=['POST'])
-=======
 app.add_url_rule('/navydp/leaveProject', 'leaveProject', leaveProject, methods=['POST'])
 app.add_url_rule('/navydp/checkDuplicateMeasurementPeriod', 'checkDuplicateMeasurementPeriod', checkDuplicateMeasurementPeriod, methods=['POST'])
->>>>>>> 648ca5ca0c00d041e7322a4c15c0e3fe60d19379
 
 
 
