@@ -565,6 +565,13 @@ def getMeasurementPeriodsInRange():
         if (db != None):
             db.close()
 
+<<<<<<< HEAD
+def exitSurvey ():
+    data = request.json
+    name = data.get("name")
+    print(name)
+    return jsonify({"success": True})
+=======
 # check if user already has a measurement period for the current date range
 def checkDuplicateMeasurementPeriod():
     try:
@@ -625,6 +632,7 @@ def leaveProject():
             db.close()
 
 
+>>>>>>> 648ca5ca0c00d041e7322a4c15c0e3fe60d19379
 
 '''
 Using pymysql cursor:
