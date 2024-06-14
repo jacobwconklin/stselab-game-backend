@@ -7,7 +7,7 @@ import hashlib
 
 # helper function to hash and salt passwords
 def hashPassword(password):
-    # TODO change and move salt to secrets, it does no good in a public github repo ... 
+    # salt is included in secrets file, if changed would need to manually update admin password in db. 
     salt = VT_MYSQL_PASSWORD_SALT
     combinedString = salt + password
     encoded = combinedString.encode()
@@ -321,6 +321,10 @@ def checkAdminCredentials(email, password = None, token = None):
             hashedPassword = hashPassword(password)
         else:
             return False
+        
+        print("here")
+        print(hashedPassword)
+        print(password)
 
         cursor = db.cursor(pymysql.cursors.DictCursor)
         sqlString = f"SELECT * FROM User WHERE Email = '{email}' AND Password = '{hashedPassword}'"
@@ -493,7 +497,7 @@ def getAllUserRecords():
         db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
-        # TODO may want to apply a join / filter to only get users with at least one measurement period
+        # TODO may want to apply a join / filter to only get users with at least one measurement period?
         cursor.execute(f"SELECT Email, JoinedProjectDate, LeftProjectDate FROM User")
         users = cursor.fetchall()
         # For each user, pull all measurement periods and calculate latest, total hours, and total number of periods
