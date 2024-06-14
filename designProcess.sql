@@ -67,7 +67,6 @@ CREATE TABLE MeasurementPeriod (
     EndDate varchar(255),
     Entered varchar(255),
     TotalDuration int,
-    LastTime bit,
     FOREIGN KEY (Email) REFERENCES User(Email)
 )
 

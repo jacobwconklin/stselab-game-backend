@@ -62,7 +62,7 @@ def host():
         if name is None or color is None:
             return jsonify({"error": "Missing required parameters"})
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Now generate a join code and create a new session in the database
@@ -159,7 +159,7 @@ def join():
         if name is None or color is None or joinCode is None:
             return jsonify({"error": "Missing required parameters"})
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that session exists
@@ -213,7 +213,7 @@ def remove():
         data = request.json
         playerId = data.get('playerId')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Ensure player exists
@@ -271,7 +271,7 @@ def roundResult():
         if score is None:
             score = -1
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
@@ -318,6 +318,19 @@ def armRoundResult():
         solverTwo = data.get('solverTwo')
         solverThree = data.get('solverThree')
         solverFour = data.get('solverFour')
+        
+        solverOne = data.get('solverOne')
+        if solverOne is None:
+            solverOne = "NULL"
+        solverTwo = data.get('solverTwo')
+        if solverTwo is None:
+            solverTwo = "NULL"
+        solverThree = data.get('solverThree')
+        if solverThree is None:
+            solverThree = "NULL"
+        if solverFour is None:
+            solverFour = "NULL"
+
         architecture = data.get('architecture')
         round = data.get('round')
         score = data.get('score')
@@ -325,7 +338,7 @@ def armRoundResult():
         if score is None:
             score = -1
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
@@ -339,7 +352,7 @@ def armRoundResult():
         # So space is reserved for 4 solvers for each round result but value may be None / Null
 
         # Now create new Round Result and insert into its table
-        sqlString = f"INSERT INTO ArmRoundResult (Round, Grams, Cost, SolverOne, SolverTwo, SolverThree, SolverFour, PlayerId, Architecture, Score) VALUES ('{str(round)}', '{str(weight)}', '{str(cost)}', '{solverOne}', '{solverTwo}', '{solverThree}', '{solverFour}', '{str(id)}', '{architecture}', '{str(score)}')"
+        sqlString = f"INSERT INTO ArmRoundResult (Round, Grams, Cost, SolverOne, SolverTwo, SolverThree, SolverFour, PlayerId, Architecture, Score) VALUES ('{str(round)}', '{str(weight)}', '{str(cost)}', {solverOne}, {solverTwo}, {solverThree}, {solverFour}, '{str(id)}', '{architecture}', '{str(score)}')"
         cursor.execute(sqlString)  
         db.commit()
 
@@ -360,7 +373,7 @@ def allResults():
         cursor = None
         db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
         
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Get all round results from Tournament Stages
@@ -405,7 +418,7 @@ def freeRoamResult():
         solver = data.get('solver')
         module = data.get('module')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
@@ -416,7 +429,7 @@ def freeRoamResult():
             return jsonify({"error": "Player not found"})
 
         # Now create new Free Roam Result and insert into its table
-        sqlString = f"INSERT INTO FreeRoamResult (Shots, Distance, Solver, Module, PlayerId) VALUES ('{str(shots)}', '{str(distance)}', '{solver}', '{module}', '{str(id)}')"
+        sqlString = f"INSERT INTO FreeRoamResult (Shots, Distance, Solver, Module, PlayerId, TimeStamp) VALUES ('{str(shots)}', '{str(distance)}', '{solver}', '{module}', '{str(id)}', CURRENT_TIMESTAMP())"
         cursor.execute(sqlString)  
         db.commit()
 
@@ -458,7 +471,7 @@ def freeRoamSurvey():
         putt = data.get('putt')
         entireHole = data.get('entireHole')
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
@@ -528,7 +541,7 @@ def diceResult():
         # Onboarding bit,
         # Score int
 
-        # Create cursot to perform SQL operations on VTMySQL DB
+        # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
         # Check that player exists
