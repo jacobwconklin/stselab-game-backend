@@ -7,7 +7,7 @@ import hashlib
 
 # helper function to hash and salt passwords
 def hashPassword(password):
-    # TODO change and move salt to secrets, it does no good in a public github repo ... 
+    # salt is included in secrets file, if changed would need to manually update admin password in db. 
     salt = VT_MYSQL_PASSWORD_SALT
     combinedString = salt + password
     encoded = combinedString.encode()
@@ -321,6 +321,10 @@ def checkAdminCredentials(email, password = None, token = None):
             hashedPassword = hashPassword(password)
         else:
             return False
+        
+        print("here")
+        print(hashedPassword)
+        print(password)
 
         cursor = db.cursor(pymysql.cursors.DictCursor)
         sqlString = f"SELECT * FROM User WHERE Email = '{email}' AND Password = '{hashedPassword}'"
@@ -493,7 +497,7 @@ def getAllUserRecords():
         db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
-        # TODO may want to apply a join / filter to only get users with at least one measurement period
+        # TODO may want to apply a join / filter to only get users with at least one measurement period?
         cursor.execute(f"SELECT Email, JoinedProjectDate, LeftProjectDate FROM User")
         users = cursor.fetchall()
         # For each user, pull all measurement periods and calculate latest, total hours, and total number of periods
@@ -561,13 +565,42 @@ def getMeasurementPeriodsInRange():
         if (db != None):
             db.close()
 
-<<<<<<< HEAD
+
+
+
+
 def exitSurvey ():
-    data = request.json
-    name = data.get("name")
-    print(name)
-    return jsonify({"success": True})
-=======
+    try:
+        db = None
+        cursor = None
+
+        data = sanitizeJson(request.json)
+        
+        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_DESIGN_PROCESS_DB, port=VT_MYSQL_PORT)
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+    
+        name = data.get("name")
+        email = data.get("email")
+
+        sqlString = f"INSERT INTO ExitSurvey (Username, Email) VALUES ('{name}', '{email}')"
+        cursor.execute(sqlString)
+        db.commit()
+
+        return jsonify({"success": True, "message": "good job"})
+    except Exception as e:
+        print(e)
+        return jsonify({"success": False, "exception": str(e)})    
+    finally:
+        if (cursor != None):
+            cursor.close()
+        if (db != None):
+            db.close()
+
+
+
+
+
+
 # check if user already has a measurement period for the current date range
 def checkDuplicateMeasurementPeriod():
     try:
@@ -628,7 +661,6 @@ def leaveProject():
             db.close()
 
 
->>>>>>> 648ca5ca0c00d041e7322a4c15c0e3fe60d19379
 
 '''
 Using pymysql cursor:

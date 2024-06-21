@@ -51,7 +51,9 @@ def index():
 @app.route('/health')
 def health():
     try:
-        # TODO can verify database connection here (and any other dependencies)  
+        # Could also verify database connection here (and any other dependencies)  
+        # be careful as Azul uses this endpoint to check that the app is running, and may restart the deployed version if it fails to get 
+        # a 200 response from this endpoint.
         return jsonify({'status': 'healthy'}), 200
     except Exception as e:
         print(e)
@@ -73,7 +75,8 @@ def hello():
        print('Request for hello page received with no name or blank name -- redirecting')
        return redirect(url_for('index'))
    
-# TODO - to be used for resetting passwords, currently testing sending emails from flask apps:
+# Used to send emails from Design Process Survey Admin to users. Kept in this app.py file because of the way
+#  flask_mail interacts with flask. 
 @app.route('/sendEmail', methods=['POST'])
 def sendEmail():
     try:
@@ -98,65 +101,7 @@ def sendEmail():
         print(e)
         return jsonify({"error": str(e)})
    
-# TODO: Function to save data from a session, potentially with different settings for what to include (currently manually pulling and saving csv's from Azure) 
-# Saves all data from a given session to a local file
-# Only uncomment this out to run on local machine, do not use in production, as files would just get saved to the server and be 
-# un-retrievable by a user. 
-# @app.route('/saveSession', methods=['POST'])
-# def saveSession():
-#     try:
-#         # First check that required data is in request, must have valid sessionId
-#         data = request.json
-#         sessionId = data.get('sessionId')
-
-#         # Create connection to Azure SQL Database
-#         conn = pyodbc.connect(AZURE_SQL_CONNECTION_STRING, timeout=120)
-#         cursor = conn.cursor()
-        
-#         # Check that players exist with matching sessionId
-#         cursor.execute(f"SELECT * FROM PlayerBrief WHERE SessionId = ?", (str(sessionId)))
-#         players = cursor.fetchall()
-#         if not players:
-#             return jsonify({"error": "Players not found"})
-        
-#         # Save array of all players in the session
-#         playerList = []
-#         for player in players:
-#             playerList.append({"id": player.Id, "name": player.Name, "color": player.Color, "scores": []})
-#             # For each player, also save their scores
-#             cursor.execute(f"SELECT * FROM RoundResult WHERE PlayerId = ? AND Round > 5", (str(player.Id)))
-#             scores = cursor.fetchall()
-#             if scores:
-#                 for score in scores:
-#                     playerList[-1]["scores"].append({"shots": score.Shots, "cost": score.Cost, "score": score.Score, "round": score.Round,
-#                         "solverOne": getattr(score, 'SolverOne', False), "solverTwo": getattr(score, 'SolverTwo', False),
-#                         "solverThree": getattr(score, 'SolverThree', False), "architecture": score.Architecture})
-        
-#         with open(str(sessionId) + '-session-data.json', 'w') as f:
-#             json.dump(data, f)
-#         return jsonify({"success": True})
-#     except Exception as e:
-#         print(e)
-#         return jsonify({"error": str(e)})
-   
 # All real methods to be used by application:
-    
-# Needed endpoints:
-    # Principally: Status session (for all)
-    # begin game (for hosts)
-    # join game (for players)
-    # remove player (for hosts)
-    # leave session (for players)
-    # end tournament (for hosts) OR maybe don't allow them to end early as it could make data collection weirder?
-    # begin round (for hosts)
-    # end round (for hosts) - may need to forcibly close rounds even if players aren't done
-    # record hole result (for all)
-        # TODO BE serves as a path to hit Plumber R code as it is over http, could have backend directly save results rather than FE making a second call to BE to save them.
-        # Such as round #, solvers, etc, and will call R then record hole, otherwise just save results from FE
-    # get scores for round for session (for all)
-    # get scores for all 3 rounds for session (for all)
-    # get aggregate scores for all sessions (for all)
-    # get aggregate scores for for a player (for all) ? Maybe not needed and not sure exactly what it would look like
 
 # REST API Endpoints:
 
@@ -170,6 +115,7 @@ app.add_url_rule('/session/advance', 'session/advance', advanceSession, methods=
 app.add_url_rule('/session/roundresults', 'session/roundresults', roundResults, methods=['POST'])
 app.add_url_rule('/session/finalresults', 'session/finalresults', finalResults, methods=['POST'])
 app.add_url_rule('/session/surveyssubmitted', 'session/surveyssubmitted', surveysSubmitted, methods=['POST'])
+
 # Mechanical Arm Mission:
 app.add_url_rule('/session/armroundresults', 'session/armroundresults', armRoundResults, methods=['POST'])
 app.add_url_rule('/session/armfinalresults', 'session/armfinalresults', armFinalResults, methods=['POST'])
@@ -204,6 +150,9 @@ app.add_url_rule('/navydp/getMeasurementPeriodsInRange', 'getMeasurementPeriodsI
 app.add_url_rule('/navydp/exitSurvey', 'exitSurvey', exitSurvey, methods=['POST'])
 app.add_url_rule('/navydp/leaveProject', 'leaveProject', leaveProject, methods=['POST'])
 app.add_url_rule('/navydp/checkDuplicateMeasurementPeriod', 'checkDuplicateMeasurementPeriod', checkDuplicateMeasurementPeriod, methods=['POST'])
+
+
+
 
 if __name__ == '__main__':
     app.run()
