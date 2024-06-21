@@ -1,6 +1,6 @@
 ## Deployment
 Deployed through Azure, currently live at:
-https://stse-backend.azurewebsites.net/
+https://stselab-games-backend.azurewebsites.net/
 
 To deploy do the following:
 
