@@ -521,6 +521,10 @@ def diceResult():
         d20 = data.get('d20')
         reasoning = data.get('reasoning')
         finalReasoning = data.get('finalReasoning')
+        reasoning2 = data.get('reasoning2')
+        reasoning3 = data.get('reasoning3')
+        reasoning4 = data.get('reasoning4')
+        reasoning5 = data.get('reasoning5')
 
         if d6 is None:
             d6 = 0
@@ -553,7 +557,7 @@ def diceResult():
             return jsonify({"error": "Player not found"})
 
         # Now create new DiceResult and insert into its table
-        sqlString = f"INSERT INTO DiceResult (D6, D8, D10, D12, D20, PlayerId, Onboarding, Score, Reasoning, FinalReasoning) VALUES ('{str(d6)}', '{str(d8)}', '{str(d10)}', '{str(d12)}', '{str(d20)}', '{str(id)}', {onboarding}, '{str(score)}', '{str(reasoning)}', '{str(finalReasoning)}')"
+        sqlString = f"INSERT INTO DiceResult (D6, D8, D10, D12, D20, PlayerId, Onboarding, Score, Reasoning, FinalReasoning, Reasoning2, Reasoning3, Reasoning4, Reasoning5) VALUES ('{str(d6)}', '{str(d8)}', '{str(d10)}', '{str(d12)}', '{str(d20)}', '{str(id)}', {onboarding}, '{str(score)}', '{str(reasoning)}', '{str(finalReasoning)}','{str(reasoning2)}','{str(reasoning3)}', '{str(reasoning4)}','{str(reasoning5)}')"
         cursor.execute(sqlString) 
         db.commit()
 
