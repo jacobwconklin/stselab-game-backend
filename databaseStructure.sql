@@ -125,7 +125,8 @@ CREATE TABLE DiceResult (
     FOREIGN KEY (PlayerId) REFERENCES PlayerBrief(Id),
     Onboarding bit,
     Score DECIMAL(4,2),
-    Reasoning varchar(255)
+    Reasoning varchar(255),
+    FinalReasoning varchar(240)
 )
 
 -- Queries for saving csv files beyond selecting all per table:
