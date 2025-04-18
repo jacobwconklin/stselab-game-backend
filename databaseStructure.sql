@@ -74,7 +74,7 @@ CREATE TABLE RoundResult (
     Architecture varchar(255),
     Score int,
     CustomPerformanceWeight int,
-    Reasoning varchar(255)
+    Reasoning varchar(1000)
 )
 
 -- Free Roam Result from expiremental playground
