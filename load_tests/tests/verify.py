@@ -186,7 +186,7 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(found,ALL_ENDPOINTS,"Frontend endpoint calls changed; update coverage")
 
     def test_timing_and_validation(self):
-        normal=settings()
+        normal=settings(speed=1)
         fast=settings(speed=10)
         self.assertAlmostEqual(delay(normal,random.Random(1),"survey")/10,
                                delay(fast,random.Random(1),"survey"))
@@ -220,6 +220,7 @@ class ModelTests(unittest.TestCase):
             user.ended=False
             user.round=1
             user.controller_version=0
+            user.active_poll_cycles=0
             user.pending=Group()
             ticks=[]
             user.tick=lambda kind:ticks.append(kind)
@@ -534,8 +535,8 @@ class WorkflowTests(unittest.TestCase):
         finally:
             backend.close()
 
-    def test_slow_polls_overlap_and_cap_is_failure(self):
-        code,folder,backend=run_case("overlap-cap",status_delay=.2,max_pending=2,deadline=10)
+    def test_outstanding_request_cap_is_still_failure(self):
+        code,folder,backend=run_case("request-cap",status_delay=.2,max_pending=1,deadline=10)
         try:
             self.assertNotEqual(code,0)
             result=json.loads((folder/"full/summary.json").read_text())

@@ -33,6 +33,13 @@ class WorkflowError(RuntimeError):
     pass
 
 
+POLL_CYCLE_TIMEOUT = 20.0  # Frontend startPolling timeout; never scaled by human speed.
+
+
+class PollCancelled(BaseException):
+    """Interrupt a read-only poll without treating cleanup as a failed game write."""
+
+
 def response_diagnostics(response):
     """Capture bounded failure details without another request or a full body dump."""
     content=response.content or b""
@@ -156,6 +163,9 @@ class Session:
             fingerprints[str(p.relative_to(FRONTEND))]=hashlib.sha256(p.read_bytes()).hexdigest()
         (self.output/"manifest.json").write_text(json.dumps({"run_id":self.id,
             "error_reporting_version":2,
+            "polling_model":{"version":2,"overlap":False,
+                             "cycle_timeout_seconds":POLL_CYCLE_TIMEOUT,
+                             "round_change_skips_previous_results":True},
             "load_test_sha256":{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest()
                                 for name in ("workflow.py","model.py","config.json","locustfile.py",
                                              "run.py","simulation_bridge.cjs","requirements.txt",
@@ -227,6 +237,8 @@ class Session:
             self.env.process_exit_code=1
         if self.env.stats.total.num_failures:
             self.env.process_exit_code=1
+        if self.metrics["poll_timeouts"]:
+            self.env.process_exit_code=1
         (self.output/"summary.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
         if self.csv_writer:
             self.csv_greenlet.kill()
@@ -273,6 +285,7 @@ class GameUser(HttpUser):
         self.removal_requested=False
         self.removed=False
         self.stop_timers=False
+        self.active_poll_cycles=0
         self.pending=Group()
         self.schedulers=Group()
         self.next_advance=None
@@ -300,6 +313,8 @@ class GameUser(HttpUser):
         failure_kind=None
         diagnostics=None
         data=None
+        if hasattr(gevent.getcurrent(),"poll_kind"):
+            gevent.getcurrent().poll_request={"method":"GET" if get else "POST","endpoint":endpoint}
         with self.client.request("GET" if get else "POST",target,
                 json=None if get else payload,name="/"+endpoint,catch_response=True,
                 timeout=self.session.config["request_timeout"],
@@ -358,6 +373,8 @@ class GameUser(HttpUser):
         error=None
         failure_kind=None
         diagnostics=None
+        if hasattr(gevent.getcurrent(),"poll_kind"):
+            gevent.getcurrent().poll_request={"method":"OPTIONS","endpoint":endpoint}
         with self.client.options(target,name="OPTIONS /"+endpoint,catch_response=True,
                 timeout=self.session.config["request_timeout"],
                 headers={"Origin":origin,"Access-Control-Request-Method":"POST",
@@ -406,29 +423,60 @@ class GameUser(HttpUser):
             interval/=self.session.config["speed"]
         due=None
         version=-1
-        while not self.stop_timers:
-            active=(kind=="controller" and not self.ended or
-                    kind=="lobby" and (self.round==0 or not self.onboarded) or
-                    kind=="survey" and self.round==5 and
-                    (not self.survey_counts[0] or not self.survey_counts[1] or self.survey_counts[1]<self.survey_counts[0]))
-            if not active:
-                due=None
-                gevent.sleep(min(interval,0.02))
-                continue
-            current_version=self.survey_version if kind=="survey" else self.controller_version if kind=="controller" else 0
-            if due is None or version!=current_version:
-                due=time.monotonic()+interval
-                version=current_version
-            if time.monotonic()<due:
-                gevent.sleep(min(0.02,due-time.monotonic()))
-                continue
-            due+=interval
-            self.session.metrics["scheduled_polls"]+=1
-            if len(self.pending)>=self.session.config["max_pending_polls"]:
-                self.session.metrics["poll_overflow"]+=1
-                self.session.abort("Outstanding polls hit max_pending_polls; offered load was capped, run failed")
-                return
-            self.pending.spawn(self.tick,kind)
+        running=None
+        try:
+            while not self.stop_timers:
+                active=(kind=="controller" and not self.ended or
+                        kind=="lobby" and (self.round==0 or not self.onboarded) or
+                        kind=="survey" and self.round==5 and
+                        (not self.survey_counts[0] or not self.survey_counts[1] or self.survey_counts[1]<self.survey_counts[0]))
+                current_version=self.survey_version if kind=="survey" else self.controller_version if kind=="controller" else 0
+                if not active or version!=current_version:
+                    if running is not None and not running.ready():
+                        running.kill(PollCancelled("effect_cleanup"),block=False)
+                    due=None
+                    version=current_version
+                if not active:
+                    gevent.sleep(min(interval,0.02))
+                    continue
+                if due is None:
+                    due=time.monotonic()+interval
+                if time.monotonic()<due:
+                    gevent.sleep(min(0.02,due-time.monotonic()))
+                    continue
+                due+=interval
+                self.session.metrics["scheduled_polls"]+=1
+                if running is not None and not running.ready():
+                    self.session.metrics["skipped_busy_polls"]+=1
+                    continue
+                if len(self.pending)>=self.session.config["max_pending_polls"]:
+                    self.session.metrics["poll_overflow"]+=1
+                    self.session.abort("Outstanding requests hit max_pending_polls; offered load was capped, run failed")
+                    return
+                running=self.pending.spawn(self.poll_cycle,kind)
+        finally:
+            if running is not None and not running.ready():
+                running.kill(PollCancelled("effect_cleanup"),block=False)
+
+    def poll_cycle(self, kind):
+        current=gevent.getcurrent()
+        current.poll_kind=kind
+        self.active_poll_cycles+=1
+        self.session.metrics["peak_active_poll_cycles"]=max(
+            self.session.metrics["peak_active_poll_cycles"],self.active_poll_cycles)
+        try:
+            with gevent.Timeout(POLL_CYCLE_TIMEOUT,PollCancelled("timeout")):
+                self.tick(kind)
+        except PollCancelled as exc:
+            reason=str(exc)
+            self.session.metrics["poll_timeouts" if reason=="timeout" else "cancelled_polls"]+=1
+            self.note("poll_cancelled",kind=kind,reason=reason,
+                      request=getattr(current,"poll_request",None))
+        finally:
+            self.active_poll_cycles-=1
+            del current.poll_kind
+            if hasattr(current,"poll_request"):
+                del current.poll_request
 
     def tick(self, kind):
         self.session.metrics["started_polls"]+=1
@@ -452,7 +500,7 @@ class GameUser(HttpUser):
             old_round=self.round
             r=self.request("session/status",{"sessionId":self.session.join_code,"playerId":self.player_id},
                            expected_removal=self.removal_requested,
-                           validator=lambda d:None if isinstance(d.get("session"),dict) and isinstance(d["session"].get("round"),int) and 0<=d["session"]["round"]<=16 else "Invalid session round")
+                           validator=lambda d:None if isinstance(d.get("session"),dict) and isinstance(d.get("session").get("round"),int) and 0<=d["session"]["round"]<=16 else "Invalid session round")
             if not r or r.get("error"):
                 return
             new_round=r["session"]["round"]
@@ -463,7 +511,9 @@ class GameUser(HttpUser):
                 self.controller_version+=1
             if r["session"].get("endDate"):
                 self.ended=True
-            # React's closure uses the previous render's round for this callback.
+            elif new_round!=old_round:
+                # New GameController returns before requesting the old round's results.
+                return
             endpoint=None
             payload={"sessionId":self.session.join_code}
             if old_round in GOLF_ROUNDS and old_round in self.finished_rounds:

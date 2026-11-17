@@ -69,3 +69,14 @@ Verification:
 - The existing SQL fixtures were extended only to support bound parameters and count executed queries. Locust's workload/configuration, request payloads, polling, timeouts, source simulations, and dependency lists were unchanged.
 
 All functional tests use the disposable SQLite adapter and extracted real handlers. A read-only MySQL verification was attempted only against the configured loopback host, but connection failed with code 2003; no MySQL data was changed. These checks do not establish a measured MySQL speedup or player capacity. Restart the actual backend and repeat the saved 1x/30x controls under the same server/database settings to measure those outcomes.
+
+## Guarded frontend polling model — November 17, 2026
+
+Backend branch `new-polling` was created from `n-plus-one-optimization`. Application handlers, database settings, the frontend, and human timing defaults were not changed. The load-test scheduler now skips busy ticks per poller, cancels reads on tracked effect changes/unmounts, applies the frontend's 20-second whole-cycle deadline, and skips old-round results after a round change. Exploration and dice background writes remain independent. New manifests identify polling-model version 2.
+
+- `tests/test_guarded_polling.py`: **10 tests passed**. Checks cover non-overlap, independent pollers, effect replacement, unmount cancellation, deadline recovery, one deadline across sequential requests, no stale round updates, unchanged background writes, and matching frontend interval/timeout constants. A real delayed loopback HTTP response was cancelled without applying its state update.
+- `tests/verify.py`: **18 tests passed**, including all profiles, saved game data, browser-dashboard reuse, diagnostic reporting and the outstanding-request cap. Final workflow artifacts: `results\verification-20261117T003451958808`.
+- `tests/test_batched_queries.py`: **4 tests passed**; existing query-batching behavior remains intact.
+- The timing unit check now explicitly requests speed 1 for its normal-speed reference, so changing the saved default speed does not invalidate the test.
+
+Skipped ticks and client-aborted cycles are reported separately from completed HTTP requests. Poll timeouts invalidate a clean final run even when the journey recovers; normal effect-cleanup cancellations do not. These are local functional checks against a disposable adapter, not a MySQL or production-capacity benchmark. Use the old branch for legacy polling controls and hold backend/server/data settings fixed when comparing the changed client workload.

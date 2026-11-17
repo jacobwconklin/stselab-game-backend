@@ -165,6 +165,16 @@ Each profile's output directory contains:
 
 The coverage launcher also writes `coverage.json` with called/missing endpoints across its profiles. Failed runs retain their artifacts for inspection. It never reports a partial journey as a completed test.
 
+### Frontend guarded-polling model (version 2)
+
+On backend branch `new-polling`, the suite matches the frontend `polling-improvement` behavior: controller, lobby and survey pollers each permit one outstanding complete cycle. Busy ticks are skipped on the existing 2.5-second clock; changing human speed does not shorten that clock unless `--scale-polling` is explicitly selected. A fixed, unscaled 20-second deadline covers the entire cycle, including OPTIONS and sequential status/results requests. Tracked effect replacements and unmounts cancel old reads. A round change skips the old round's results request. Other pollers and background exploration/dice saves remain independent; writes are not retried or cancelled by poll cleanup.
+
+New manifests contain `polling_model.version: 2`. Summary metrics include `skipped_busy_polls`, `cancelled_polls`, `poll_timeouts` and `peak_active_poll_cycles` (at most three per player, one of each kind). The older `peak_pending_polls` counter measures all pending-group tasks, including background writes, so it can exceed three. `poll_cancelled` journey entries include the reason and current request when available. Cancelled in-flight HTTP calls may have no completed native Locust request-statistics entry; use these counters alongside native CSV/HTML statistics. Cleanup cancellations are expected. Poll deadlines permit later polling recovery but make the final run exit nonzero, even if all journeys subsequently finish.
+
+Compare old and new polling as different workloads: fewer requests during slowdown are an intended change in offered load, not proof the backend executes each request faster. Keep application/server/database settings fixed when measuring the polling change. Existing baseline reports and the old polling model remain on `n-plus-one-optimization`. No launch-command change is needed; restart Locust after switching branches.
+
+Verify the new scheduler with `./.venv/Scripts/python.exe -B ./tests/test_guarded_polling.py`, alongside the existing `tests/verify.py` and `tests/test_batched_queries.py` checks. These are disposable local functional checks, not a production-capacity benchmark.
+
 Compare fixed populations in separate fresh runs (10, 25, 50, 75, 100, 150, 200), using the same timings/seed, dataset history, deployment, and polling policy. Completed throughput can drop when the server slows: inspect scheduled/started/completed polls, peak pending requests, timeouts, and overflow as well as averages. Initial registration and final-results bursts should be examined separately from steady polling. This suite does not instrument production SQL, worker queues, or browser frame times; gather those measurements alongside it.
 
 ### Error details and comparisons with earlier runs
