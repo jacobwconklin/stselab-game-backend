@@ -14,8 +14,8 @@ CREATE TABLE PlayerBrief (
     Name varchar(255),
     Color varchar(255),
     SessionId int,
-    FOREIGN KEY (SessionId) REFERENCES session(JoinCode)
-)
+    FOREIGN KEY (SessionId) REFERENCES Session(JoinCode)
+);
 
 -- Player Information Table:
 CREATE TABLE PlayerInformation (
@@ -49,7 +49,7 @@ CREATE TABLE PlayerInformation (
 
     SystemsEngineeringExpertise int,
     StatementOfWorkExpertise int
-)
+);
 
 -- If there is only a value for SolverOne and not SolverTwo and SolverThree and if the round is 1 or 2 
 -- then h_arch was used.
@@ -75,7 +75,7 @@ CREATE TABLE RoundResult (
     Score int,
     CustomPerformanceWeight int,
     Reasoning varchar(1000)
-)
+);
 
 -- Free Roam Result from expiremental playground
 -- Solver are ints where: 1 -> Professional, 2 -> Amatuer, 3 -> Specialist
@@ -87,8 +87,9 @@ CREATE TABLE FreeRoamResult (
     Solver int,
     Module int,
     PlayerId varchar(255),
+    TimeStamp datetime,
     FOREIGN KEY (PlayerId) REFERENCES PlayerBrief(Id)
-)
+);
 
 -- Free Roam Survey Results for players to choose the best solver for each module.
 -- The number stored per module is for a solver as an int that can represent multiple solvers as follows:
@@ -109,7 +110,7 @@ CREATE TABLE FreeRoamSurvey (
     EntireHole int,
     PlayerId varchar(255), 
     FOREIGN KEY (PlayerId) REFERENCES PlayerBrief(Id)
-)
+);
 
 -- Saves results of D&D inspired dice picking for Onboarding and Offboarding game
 -- Save number of each kind of dice, save playerID, save if it was Onboarding or Offboarding, 
@@ -131,7 +132,7 @@ CREATE TABLE DiceResult (
     Reasoning3 varchar(3000),
     Reasoning4 varchar(3000),
     Reasoning5 varchar(3000)
-)
+);
 
 -- Queries for saving csv files beyond selecting all per table:
 

@@ -1,0 +1,669 @@
+{
+  "source_sha256": "48efaba3f659ab10d66186ea144928ed17f478c5124cd298c49e13f11ffb2927",
+  "description": "Captured from the original unbatched handlers against the mixed-record fixture, before editing session.py.",
+  "cases": [
+    {
+      "endpoint": "players",
+      "payload": {
+        "sessionId": 111111
+      },
+      "response": {
+        "completedOnboarding": [
+          "player-1",
+          "player-2"
+        ],
+        "players": [
+          {
+            "color": "#112233",
+            "completedOnboarding": false,
+            "id": "player-0",
+            "name": "Ada"
+          },
+          {
+            "color": "#112233",
+            "completedOnboarding": true,
+            "id": "player-1",
+            "name": "O'Brien"
+          },
+          {
+            "color": "#112233",
+            "completedOnboarding": true,
+            "id": "player-2",
+            "name": "Zoë"
+          },
+          {
+            "color": null,
+            "completedOnboarding": false,
+            "id": "player-3",
+            "name": null
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 6
+    },
+    {
+      "endpoint": "roundresults",
+      "payload": {
+        "sessionId": 111111,
+        "round": 6
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada"
+          },
+          {
+            "architecture": "h",
+            "color": "#112233",
+            "cost": 0,
+            "customPerformanceWeight": null,
+            "id": "player-1",
+            "name": "O'Brien",
+            "score": 30,
+            "shots": 6,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null
+          },
+          {
+            "architecture": "h",
+            "color": "#112233",
+            "cost": 0,
+            "customPerformanceWeight": null,
+            "id": "player-2",
+            "name": "Zoë",
+            "score": 50,
+            "shots": 8,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null
+          },
+          {
+            "architecture": "h",
+            "color": null,
+            "cost": 0,
+            "customPerformanceWeight": null,
+            "id": "player-3",
+            "name": null,
+            "score": 0,
+            "shots": null,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "finalresults",
+      "payload": {
+        "sessionId": 111111
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada",
+            "scores": []
+          },
+          {
+            "color": "#112233",
+            "id": "player-1",
+            "name": "O'Brien",
+            "scores": [
+              {
+                "architecture": "h",
+                "cost": 0,
+                "round": 6,
+                "score": 30,
+                "shots": 6,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null
+              },
+              {
+                "architecture": "h",
+                "cost": 0,
+                "round": 9,
+                "score": 90,
+                "shots": 9,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null
+              },
+              {
+                "architecture": "h",
+                "cost": 0,
+                "round": 7,
+                "score": 40,
+                "shots": 7,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null
+              }
+            ]
+          },
+          {
+            "color": "#112233",
+            "id": "player-2",
+            "name": "Zoë",
+            "scores": [
+              {
+                "architecture": "h",
+                "cost": 0,
+                "round": 6,
+                "score": 50,
+                "shots": 8,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null
+              },
+              {
+                "architecture": "h",
+                "cost": 0,
+                "round": 6,
+                "score": 99,
+                "shots": 99,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null
+              },
+              {
+                "architecture": "h",
+                "cost": 0,
+                "round": 9,
+                "score": 60,
+                "shots": 9,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null
+              }
+            ]
+          },
+          {
+            "color": null,
+            "id": "player-3",
+            "name": null,
+            "scores": [
+              {
+                "architecture": "h",
+                "cost": 0,
+                "round": 6,
+                "score": 0,
+                "shots": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null
+              }
+            ]
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "armroundresults",
+      "payload": {
+        "sessionId": 111111,
+        "round": 12
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada"
+          },
+          {
+            "architecture": "Manipulator and Grabber",
+            "color": "#112233",
+            "cost": 0,
+            "id": "player-1",
+            "name": "O'Brien",
+            "score": 10,
+            "solverFour": null,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null,
+            "weight": 100
+          },
+          {
+            "architecture": "Manipulator and Grabber",
+            "color": "#112233",
+            "cost": 0,
+            "id": "player-2",
+            "name": "Zoë",
+            "score": 40,
+            "solverFour": null,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null,
+            "weight": 200
+          },
+          {
+            "architecture": "Manipulator and Grabber",
+            "color": null,
+            "cost": 0,
+            "id": "player-3",
+            "name": null,
+            "score": 0,
+            "solverFour": null,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null,
+            "weight": null
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "armfinalresults",
+      "payload": {
+        "sessionId": 111111
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada",
+            "scores": []
+          },
+          {
+            "color": "#112233",
+            "id": "player-1",
+            "name": "O'Brien",
+            "scores": [
+              {
+                "architecture": "Manipulator and Grabber",
+                "cost": 0,
+                "round": 12,
+                "score": 10,
+                "solverFour": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null,
+                "weight": 100
+              },
+              {
+                "architecture": "Manipulator and Grabber",
+                "cost": 0,
+                "round": 15,
+                "score": 30,
+                "solverFour": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null,
+                "weight": 150
+              },
+              {
+                "architecture": "Manipulator and Grabber",
+                "cost": 0,
+                "round": 13,
+                "score": 20,
+                "solverFour": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null,
+                "weight": 110
+              }
+            ]
+          },
+          {
+            "color": "#112233",
+            "id": "player-2",
+            "name": "Zoë",
+            "scores": [
+              {
+                "architecture": "Manipulator and Grabber",
+                "cost": 0,
+                "round": 12,
+                "score": 40,
+                "solverFour": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null,
+                "weight": 200
+              },
+              {
+                "architecture": "Manipulator and Grabber",
+                "cost": 0,
+                "round": 12,
+                "score": 99,
+                "solverFour": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null,
+                "weight": 999
+              },
+              {
+                "architecture": "Manipulator and Grabber",
+                "cost": 0,
+                "round": 15,
+                "score": 50,
+                "solverFour": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null,
+                "weight": 220
+              }
+            ]
+          },
+          {
+            "color": null,
+            "id": "player-3",
+            "name": null,
+            "scores": [
+              {
+                "architecture": "Manipulator and Grabber",
+                "cost": 0,
+                "round": 12,
+                "score": 0,
+                "solverFour": null,
+                "solverOne": 1,
+                "solverThree": 3,
+                "solverTwo": null,
+                "weight": null
+              }
+            ]
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "surveyssubmitted",
+      "payload": {
+        "sessionId": 111111
+      },
+      "response": {
+        "success": true,
+        "surveysSubmitted": 2,
+        "totalPlayers": 4
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "roundresults",
+      "payload": {
+        "sessionId": 111111,
+        "round": 1
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada"
+          },
+          {
+            "architecture": "h",
+            "color": "#112233",
+            "cost": 0,
+            "customPerformanceWeight": null,
+            "id": "player-1",
+            "name": "O'Brien",
+            "score": 10,
+            "shots": 4,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null
+          },
+          {
+            "color": "#112233",
+            "id": "player-2",
+            "name": "Zoë"
+          },
+          {
+            "color": null,
+            "id": "player-3",
+            "name": null
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "roundresults",
+      "payload": {
+        "sessionId": 111111,
+        "round": 8
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada"
+          },
+          {
+            "color": "#112233",
+            "id": "player-1",
+            "name": "O'Brien"
+          },
+          {
+            "color": "#112233",
+            "id": "player-2",
+            "name": "Zoë"
+          },
+          {
+            "color": null,
+            "id": "player-3",
+            "name": null
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "armroundresults",
+      "payload": {
+        "sessionId": 111111,
+        "round": 13
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada"
+          },
+          {
+            "architecture": "Manipulator and Grabber",
+            "color": "#112233",
+            "cost": 0,
+            "id": "player-1",
+            "name": "O'Brien",
+            "score": 20,
+            "solverFour": null,
+            "solverOne": 1,
+            "solverThree": 3,
+            "solverTwo": null,
+            "weight": 110
+          },
+          {
+            "color": "#112233",
+            "id": "player-2",
+            "name": "Zoë"
+          },
+          {
+            "color": null,
+            "id": "player-3",
+            "name": null
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "armroundresults",
+      "payload": {
+        "sessionId": 111111,
+        "round": 14
+      },
+      "response": {
+        "results": [
+          {
+            "color": "#112233",
+            "id": "player-0",
+            "name": "Ada"
+          },
+          {
+            "color": "#112233",
+            "id": "player-1",
+            "name": "O'Brien"
+          },
+          {
+            "color": "#112233",
+            "id": "player-2",
+            "name": "Zoë"
+          },
+          {
+            "color": null,
+            "id": "player-3",
+            "name": null
+          }
+        ],
+        "success": true
+      },
+      "queries_before": 5
+    },
+    {
+      "endpoint": "players",
+      "payload": {
+        "sessionId": 333333
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 2
+    },
+    {
+      "endpoint": "roundresults",
+      "payload": {
+        "sessionId": 333333,
+        "round": 6
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "finalresults",
+      "payload": {
+        "sessionId": 333333
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "armroundresults",
+      "payload": {
+        "sessionId": 333333,
+        "round": 12
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "armfinalresults",
+      "payload": {
+        "sessionId": 333333
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "surveyssubmitted",
+      "payload": {
+        "sessionId": 333333
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "players",
+      "payload": {
+        "sessionId": 999999
+      },
+      "response": {
+        "error": "Session not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "roundresults",
+      "payload": {
+        "sessionId": 999999,
+        "round": 6
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "finalresults",
+      "payload": {
+        "sessionId": 999999
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "armroundresults",
+      "payload": {
+        "sessionId": 999999,
+        "round": 12
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "armfinalresults",
+      "payload": {
+        "sessionId": 999999
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    },
+    {
+      "endpoint": "surveyssubmitted",
+      "payload": {
+        "sessionId": 999999
+      },
+      "response": {
+        "error": "Players not found"
+      },
+      "queries_before": 1
+    }
+  ]
+}

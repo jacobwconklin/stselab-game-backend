@@ -56,7 +56,7 @@ CREATE TABLE User (
     -- Relevant for admin dashboard:
     JoinedProjectDate varchar(255),
     LeftProjectDate varchar(255)
-)
+);
 
 -- table for measurement period (connects records)
 CREATE TABLE MeasurementPeriod (
@@ -68,7 +68,7 @@ CREATE TABLE MeasurementPeriod (
     Entered varchar(255),
     TotalDuration int,
     FOREIGN KEY (Email) REFERENCES User(Email)
-)
+);
 
 
 -- table for one activity record
@@ -83,7 +83,7 @@ CREATE TABLE ActivityRecord (
     Question2 varchar(255),
     Question3 varchar(255),
     Question4 varchar(255)
-)
+);
 
 -- Table for example exit survey
 CREATE TABLE ExitSurvey (
@@ -92,4 +92,4 @@ CREATE TABLE ExitSurvey (
     Username varchar(255),
     Email varchar(255),
     FOREIGN KEY (Email) REFERENCES User(Email)
-)
+);

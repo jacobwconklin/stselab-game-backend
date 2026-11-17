@@ -1,0 +1,30 @@
+{
+  "speed": 10.0,
+  "scale_polling": false,
+  "poll_seconds": 2.5,
+  "request_timeout": 20,
+  "max_session_seconds": 7200,
+  "max_pending_polls": 100,
+  "archive_probability": 0.6,
+  "origin": "http://localhost:3000",
+  "seed": 20261111,
+  "timings": {
+    "registration": [30, 60, 120],
+    "lobby": [60, 75, 100],
+    "practice": [15, 25, 40],
+    "amateur_experiment": [55, 70, 90],
+    "golf_choice": [25, 45, 70],
+    "golf_exploration": [110, 140, 180],
+    "exploration_attempt": [6, 12, 20],
+    "survey": [45, 75, 115],
+    "arm_exploration": [110, 140, 180],
+    "arm_choice": [35, 55, 75],
+    "results_review": [10, 20, 30],
+    "final_review": [25, 40, 55],
+    "dice_choice": [12, 20, 35],
+    "dice_reason": [15, 25, 45],
+    "offboarding_questions": [30, 50, 80],
+    "historical_results": [10, 20, 45],
+    "animation": [2.8005, 2.8005, 2.8005]
+  }
+}
