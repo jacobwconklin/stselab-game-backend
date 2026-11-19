@@ -100,6 +100,7 @@ class BackendAdapter:
             return uuid.UUID(int=outer.counter)
 
         namespace=dict(request=request,jsonify=jsonify,random=random,datetime=datetime,
+                       get_game_connection=Connection,
                        uuid=SimpleNamespace(uuid4=next_uuid),json=json,
                        pymysql=SimpleNamespace(connections=SimpleNamespace(Connection=Connection),
                                                cursors=SimpleNamespace(DictCursor=object)))
@@ -489,6 +490,11 @@ class WorkflowTests(unittest.TestCase):
                 self.assertIsNone(result["failure"])
                 self.assertEqual(result["missing_endpoints"],[])
                 self.assertGreater(result["metrics"]["preflight_requests"],0)
+                monitoring=result["connection_monitor"]
+                self.assertEqual(monitoring["status"],"stopped")
+                self.assertEqual(monitoring["sample_errors"],0)
+                self.assertGreater(monitoring["peak_open_connections"],0)
+                self.assertTrue((folder/scenario/"connections.csv").is_file())
                 session_id=result["session_id"]
                 expected=[0,11,12,13,14,15] if scenario=="arm-only" else list(range(16 if scenario!="golf-only" else 10))
                 self.assertEqual([t["from"] for t in result["transitions"]],expected)

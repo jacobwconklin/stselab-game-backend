@@ -83,6 +83,23 @@ source .venv/Scripts/activate
 flask --app app.py --debug run
 ```
 
+## Game database connection pool
+
+The game handlers in `users.py` and `session.py` borrow raw PyMySQL connections through `database.get_game_connection()`. Install the declared backend dependencies before starting the server (`python -m pip install -r requirements.txt`); SQLAlchemy is used for pooling, not ORM models or schema creation. Calling `close()` returns a connection to the pool and rolls back unfinished transactions. Existing explicit commits remain unchanged. Other database features outside the game retain their existing connection handling.
+
+Defaults are 16 connections **per server process**, zero overflow, a five-second wait to borrow a connection, pre-ping validation, and recycling connections older than 1,800 seconds on checkout. Override with `STSE_DB_POOL_SIZE`, `STSE_DB_POOL_TIMEOUT`, and `STSE_DB_POOL_RECYCLE` environment variables. Values must be positive; the timeout must also be finite. Configure recycling below the actual database idle timeout when it differs from this default. Multiple worker processes each have their own pool; budget the combined size against MySQL capacity.
+
+Pools are created lazily and reset after a Unix fork without closing the parent's connections. Exhaustion raises a timeout through the existing endpoint error handling; database queries and writes are not automatically replayed. The pool wait timeout is not a query-execution timeout. Restart the backend after changing pool settings. Keep the HTTP server, polling model, database starting data, and load-test settings fixed when comparing pooling performance.
+
+Optional local verification dependencies and commands, from `backend`:
+
+```bash
+./load_tests/.venv/Scripts/python.exe -m pip install -r load_tests/requirements-pooling.txt
+./load_tests/.venv/Scripts/python.exe -B load_tests/tests/test_connection_pool.py
+```
+
+The pool tests exercise the actual SQLAlchemy pool against disposable SQLite connections. See `load_tests/VERIFICATION.md` for the separate MySQL and workflow checks.
+
 # Note about sensitive information:
 
 1) Do NOT push any API keys or database connection strings to GitHub, this application is in a public repository. 

@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime
 from flask import (request, jsonify)
-from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_STSELAB_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT, VT_MYSQL_PASSWORD_SALT
 import pymysql
 import pymysql.cursors
+from database import get_game_connection
 
 # Begins a new game by a host, creating a session. Will need all of the information collected for each player, without
 # a join code. Must return if successful or not, and if successful, the join code for the session.
@@ -19,7 +19,7 @@ def host():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First pull data from request
         data = request.json
@@ -104,10 +104,12 @@ def host():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 
 # Joins a game creating a player for a given session IF that session exists
@@ -115,7 +117,7 @@ def join():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First pull data request, must have valid join code
         data = request.json
@@ -194,10 +196,12 @@ def join():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 
 # Removes a player from a session, called by the host to remove them or the player themselves to leave
@@ -207,7 +211,7 @@ def remove():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid playerId
         data = request.json
@@ -232,10 +236,12 @@ def remove():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
 
 
 # Saves the result for one player for one round of the tournament. Includes shots, cost, and solvers played with
@@ -243,7 +249,7 @@ def roundResult():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # Save player's results for a round in the tournament
         # First check that required data is in request, must have valid Id for Player,
@@ -295,17 +301,19 @@ def roundResult():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Saves the result for one player for one round of the Mechanical Arm Mission. Includes Grams(weight), cost, architecture, score, and solvers played with
 def armRoundResult():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # Save player's results for a round in the Mechanical Arm Mission
         # First check that required data is in request, must have valid Id for Player,
@@ -361,17 +369,19 @@ def armRoundResult():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Retreives ALL Round Results to show aggregate results across all tournaments played before. 
 def allResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # Create cursor to perform SQL operations on VTMySQL DB
         cursor = db.cursor(pymysql.cursors.DictCursor)
@@ -396,17 +406,19 @@ def allResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Saves the result of a player playing free roam modules in the playground. includes shots, distance remaining to hole (up to 2 decimal places), solver used, and module selected, as well as the player's id 
 def freeRoamResult():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # Save player's results for a round in the tournament
         # First check that required data is in request, must have valid Id for Player,
@@ -438,10 +450,12 @@ def freeRoamResult():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Saves the result of a player Free roam survey 
 # The number stored per module is for a solver as an int that can represent multiple solvers as follows:
@@ -457,7 +471,7 @@ def freeRoamSurvey():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # Save player's results for a round in the tournament
         # First check that required data is in request, must have valid Id for Player,
@@ -491,10 +505,12 @@ def freeRoamSurvey():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 
 # Save result of player playing onboarding or offboarding dice game
@@ -502,7 +518,7 @@ def diceResult():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid Id for Player,
         # as well as required Die, whether it is onboarding, and the score.
@@ -566,7 +582,9 @@ def diceResult():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()

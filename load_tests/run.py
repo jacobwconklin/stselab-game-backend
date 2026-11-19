@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--output",type=Path)
     parser.add_argument("--web",action="store_true",help="Start the browser dashboard instead of an automatic headless run")
     parser.add_argument("--web-port",type=int,default=8089)
+    parser.add_argument("--no-connection-monitor",action="store_true",help="Disable automatic local TCP connection monitoring")
     args=parser.parse_args()
     from model import inside, settings
     from urllib.parse import urlparse
@@ -72,6 +73,8 @@ def main():
                 cmd.extend([name,str(value)])
         if args.scale_polling:
             cmd.append("--scale-polling")
+        if args.no_connection_monitor:
+            cmd.append("--no-connection-monitor")
         print(f"Running {scenario}: {args.players} participants; outputs: {case}",flush=True)
         result=subprocess.run(cmd,cwd=ROOT,env=os.environ.copy(),check=False)
         exit_code=max(exit_code,0 if result.returncode==0 else 1)

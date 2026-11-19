@@ -5,9 +5,9 @@ import pyodbc
 from dotenv import load_dotenv
 load_dotenv()
 from flask import (request, jsonify)
-from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_STSELAB_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT, VT_MYSQL_PASSWORD_SALT
 import pymysql
 import pymysql.cursors
+from database import get_game_connection
 
 
 def _playerRecords(cursor, players, table, condition="", parameters=(), presenceOnly=False):
@@ -35,7 +35,7 @@ def sessionStatus():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
 
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -64,10 +64,12 @@ def sessionStatus():
         print(e)
         return jsonify({"error": str(e)}) 
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Simply provides a list of players in a session, for now useful in wait room to show all players without any need
 # for scores. 
@@ -75,7 +77,7 @@ def playersInSession():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -117,10 +119,12 @@ def playersInSession():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # applies end time to session, could be used to allow players in final results page to stop polling backend, also saves end time into 
 # database.
@@ -128,7 +132,7 @@ def endSession():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -155,17 +159,19 @@ def endSession():
             print(e)
             return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # enpoint only used once per session to skip the golf game if desired by the host
 def jumpToArmMission():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         # I have decided on using round number to determine position in the game. 
@@ -192,10 +198,12 @@ def jumpToArmMission():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Moves session to the next round, only host can call this
 # Will update the round number, and the EndDate if the last round has been played
@@ -203,7 +211,7 @@ def advanceSession():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         # I have decided on using round number to determine position in the game. 
@@ -230,17 +238,19 @@ def advanceSession():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Endpoint to get results for for a round rather than shoving results into session status
 def roundResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -282,17 +292,19 @@ def roundResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Get aggregate results of all tournament rounds
 def finalResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -334,10 +346,12 @@ def finalResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 
 # Endpoint to get results for for a Mechanical Arm Mission round rather than shoving results into session status
@@ -345,7 +359,7 @@ def armRoundResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -388,17 +402,19 @@ def armRoundResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Get aggregate results of all mechanical arm mission rounds
 def armFinalResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -440,17 +456,19 @@ def armFinalResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # get quantity of players that have finished the survey and quantity that are in the session
 def surveysSubmitted():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -476,7 +494,9 @@ def surveysSubmitted():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()

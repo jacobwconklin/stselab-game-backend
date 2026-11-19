@@ -80,3 +80,26 @@ Backend branch `new-polling` was created from `n-plus-one-optimization`. Applica
 - The timing unit check now explicitly requests speed 1 for its normal-speed reference, so changing the saved default speed does not invalidate the test.
 
 Skipped ticks and client-aborted cycles are reported separately from completed HTTP requests. Poll timeouts invalidate a clean final run even when the journey recovers; normal effect-cleanup cancellations do not. These are local functional checks against a disposable adapter, not a MySQL or production-capacity benchmark. Use the old branch for legacy polling controls and hold backend/server/data settings fixed when comparing the changed client workload.
+
+## Bounded game database connections — November 17, 2026
+
+Branch `connection-pooling` starts at the `new-polling` checkpoint `a285aa4` (`changed load test polling to match new frontend changes`). All 19 game handlers now acquire connections from `database.get_game_connection()`. Existing raw SQL and all 14 explicit commit calls were checked against the parent branch and were unchanged. Nested cleanup returns connections even when cursor cleanup fails. The application dependency is pinned to SQLAlchemy 2.0.58; there are no ORM models, migrations, or database-schema changes.
+
+Defaults: 16 connections per process, zero overflow, five-second checkout timeout, pre-ping validation, recycle on checkout after 1,800 seconds, rollback on return. Creation is lazy/thread-safe; Unix child processes receive a fresh pool without closing parent sockets. Settings and installation are documented in the backend README. New run manifests fingerprint `database.py`; the Locust workload is unchanged.
+
+- `tests/test_connection_pool.py`: **9 tests passed** using the real SQLAlchemy QueuePool and disposable SQLite connections. They cover 100 checkouts reusing one physical connection, pool limits and timeout recovery, exclusive concurrent checkout, one engine initialization, rollback of unfinished writes, persistence of committed writes, stale connection replacement, fork reset, configuration validation, and cleanup in all 19 game handlers.
+- A separate read-only check against the configured loopback MySQL used actual PyMySQL dictionary cursors and confirmed two checkouts returned the same MySQL `CONNECTION_ID()`. No user/game data was written.
+- Existing suites also passed: **18 workflow tests**, **10 guarded-polling tests**, and **4 query-regression tests**; **41 tests total**. Workflow artifacts: `results\verification-20261117T010137580277`.
+- The existing backend virtual environment points to an unavailable Python 3.10 interpreter in this tool environment. Tests ran with the working load-test interpreter and installed pooling test dependencies. Install the new SQLAlchemy dependency in the actual environment used to launch Waitress, then restart the backend.
+
+This verifies behavior and reuse, not an observed performance gain. Compare the same workload, polling model, database data, HTTP server settings and explicit pool limits before drawing throughput/capacity conclusions. Optional pool-test dependencies are in `requirements-pooling.txt`; install them into the test environment before running `tests/test_connection_pool.py`.
+
+## Automatic local TCP monitoring — November 17, 2026
+
+All changes for monitoring are confined to `load_tests`. Local runs automatically start a separate read-only psutil sampler and persist `connections.csv`, `connection_monitor.json`, and diagnostics with the run; final summaries include the monitor report. Remote targets are skipped explicitly. `--no-connection-monitor` disables sampling. Counts describe OS server-side TCP sockets, not exact Waitress channels, HTTP request concurrency, or queue depth.
+
+- Seven monitor tests verify local/remote eligibility, server-side attribution without double counting, TIME_WAIT exclusion, unknown versus zero, IPv6 and listener process IDs, saved permission errors, and real child-process sampling/clean shutdown with two live TCP connections.
+- All 30 discovered tests passed (including those seven), and all 18 existing workflow/response/model tests passed: 48 total. Successful and aborted runs saved monitoring files automatically. Initial workflow artifacts: `results/verification-20261117T171400727967`.
+- After adding persisted-monitor assertions, the four-profile coverage workflow and consecutive dashboard-run checks passed again in `results/verification-20261117T171512134403`. No sampling errors were observed. The test uses a disposable local backend adapter, not the actual game database.
+
+One-second sampling can miss brief peaks; OS permission restrictions and local proxies can affect attribution. Monitoring overhead has not been benchmarked at large player counts. Existing historical runs have no recoverable connection snapshots.

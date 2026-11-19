@@ -61,6 +61,22 @@ These compare 22 response cases captured before batching, check all six handlers
 
 ## Run a representative session
 
+### Automatic local connection monitoring
+
+Every run now automatically samples local backend TCP connections once per second in a separate process. Use the same run command as before; no extra terminal or manual export is needed. Each dashboard Start gets its own monitor, and completion, failure, or Stop closes it. Data is flushed during the run, so samples already saved survive an interrupted test.
+
+The run's existing results folder contains:
+
+- `connections.csv`: UTC timestamps, elapsed seconds, listener process IDs, open server-side TCP socket counts, ESTABLISHED/CLOSE_WAIT counts, all observed TCP states, sample duration, and any sampling error.
+- `connection_monitor.json`: monitoring status, peak counts and peak timestamp, observed backend process IDs, and sample/error totals. The final `summary.json` also includes this information.
+- `connection_monitor.log`: diagnostic errors from the separate monitor process.
+
+Counts include only sockets owned by the process(es) listening on the target address/port, with the local/server endpoint matching that port. This avoids counting both ends of localhost connections. Listener sockets and closed TIME_WAIT sockets are excluded from the open count. No matching listener means an unknown/blank count, not zero. Process IDs are rediscovered each sample, so backend restarts are visible. Only numeric loopback addresses and `localhost` are monitored automatically; remote targets are explicitly marked `skipped_remote_target`. For Docker/WSL/proxies, the listener may be a forwarding process: these measurements describe the visible local endpoint, not necessarily the backend's internal channels.
+
+This is an approximate OS connection count, **not** simultaneous HTTP requests or Waitress's exact internal channel/queue count. One-second samples can miss shorter peaks. The monitor does not send HTTP requests, inspect request bodies, or change the game/server. Pair it with timestamped backend logs to investigate connection-limit timeouts. On systems without sufficient socket-inspection permissions, sampling errors are saved and the game test continues. On some Unix systems the OS may omit inaccessible sockets without reporting an error; treat those counts as potentially incomplete.
+
+Use `--no-connection-monitor` for a baseline without sampling overhead. Monitoring requires `psutil==7.2.2`, already present in the Windows lock file and now explicit in `load_tests/requirements.txt`; install those requirements into the load-test environment if needed. Existing reports cannot be retroactively monitored.
+
 First start your independently configured test backend. Then:
 
 ```powershell

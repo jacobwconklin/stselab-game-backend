@@ -17,6 +17,8 @@ def arguments(parser, **_):
     parser.add_argument("--seed", type=int, default=None, include_in_web_ui=False)
     parser.add_argument("--game-config", default=None, include_in_web_ui=False, help="JSON overrides; config.json supplies defaults")
     parser.add_argument("--output", default=None, include_in_web_ui=False, help="Output directory, constrained to load_tests")
+    parser.add_argument("--no-connection-monitor", action="store_true", include_in_web_ui=False,
+                        help="Disable automatic local server TCP connection sampling")
 
 
 @events.init.add_listener

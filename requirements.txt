@@ -7,3 +7,5 @@ pyodbc
 python-dotenv
 PyMySQL
 Flask-Mail
+SQLAlchemy==2.0.58
+SQLAlchemy==2.0.58

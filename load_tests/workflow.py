@@ -21,6 +21,7 @@ from locust import HttpUser, task, __version__ as locust_version
 from locust.exception import StopUser
 from locust.stats import StatsCSV, StatsCSVFileWriter, PERCENTILES_TO_REPORT
 from locust.html import get_html_report
+from connection_monitor import ConnectionMonitor
 
 from model import (ALL_ENDPOINTS, ARM_ROUNDS, FRONTEND, GOLF_ROUNDS, ROOT,
                    delay, dice_payload, host_plays_dice, inside, reasoning,
@@ -166,8 +167,10 @@ class Session:
             "polling_model":{"version":2,"overlap":False,
                              "cycle_timeout_seconds":POLL_CYCLE_TIMEOUT,
                              "round_change_skips_previous_results":True},
+            "connection_monitor":{"enabled":not getattr(opts,"no_connection_monitor",False),
+                                  "local_only":True,"interval_seconds":1.0},
             "load_test_sha256":{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest()
-                                for name in ("workflow.py","model.py","config.json","locustfile.py",
+                                for name in ("workflow.py","connection_monitor.py","model.py","config.json","locustfile.py",
                                              "run.py","simulation_bridge.cjs","requirements.txt",
                                              "requirements-windows.lock.txt")},
             "scenario":self.scenario,"players_including_host":self.expected,
@@ -175,7 +178,7 @@ class Session:
             "runtimes":{"python":sys.version,"locust":locust_version,
                         "node":self.engine.meta["nodeVersion"],"typescript":self.engine.meta["typescriptVersion"]},
             "backend_sha256":{name:hashlib.sha256((ROOT.parent/name).read_bytes()).hexdigest()
-                              for name in ("app.py","users.py","session.py","requirements.txt",
+                              for name in ("app.py","users.py","session.py","database.py","requirements.txt",
                                            "databaseStructure.sql","armDatabaseStructure.sql")},
             "frontend_sha256":fingerprints},indent=2),encoding="utf-8")
         self.watchdog=gevent.spawn_later(self.config["max_session_seconds"],self.abort,
@@ -183,6 +186,9 @@ class Session:
         if environment.web_ui:
             self.csv_writer=StatsCSVFileWriter(environment,PERCENTILES_TO_REPORT,str(self.output/"requests"),full_history=True)
             self.csv_greenlet=gevent.spawn(self.csv_writer.stats_writer)
+        self.connection_monitor=ConnectionMonitor(self.output,environment.host,
+            enabled=not getattr(opts,"no_connection_monitor",False))
+        self.connection_monitor.start()
 
     def record(self, event, **values):
         self.trace.write(json.dumps({"elapsed":round(time.monotonic()-self.started,4),
@@ -225,6 +231,7 @@ class Session:
                 "phase_endpoint_calls":dict(self.phase_calls),
                 "expected_endpoints":sorted(expected),"missing_endpoints":sorted(expected-set(self.coverage)),
                 "metrics":dict(self.metrics),"transitions":self.transitions,
+                "connection_monitor":self.connection_monitor.report(),
                 "player_ids":{str(i):p.player_id for i,p in self.roster.items()}}
 
     def close(self):
@@ -232,6 +239,7 @@ class Session:
             return
         self.closed=True
         self.watchdog.kill()
+        self.connection_monitor.stop()
         result=self.summary()
         if len(self.completed)!=self.expected or result["missing_endpoints"]:
             self.env.process_exit_code=1
