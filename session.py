@@ -5,9 +5,27 @@ import pyodbc
 from dotenv import load_dotenv
 load_dotenv()
 from flask import (request, jsonify)
-from environmentSecrets import VT_MYSQL_HOST, VT_MYSQL_STSELAB_DB, VT_MYSQL_USER, VT_MYSQL_PASSWORD, VT_MYSQL_PORT, VT_MYSQL_PASSWORD_SALT
 import pymysql
 import pymysql.cursors
+from database import get_game_connection
+
+
+def _playerRecords(cursor, players, table, condition="", parameters=(), presenceOnly=False):
+    """Fetch related rows once and group them by player; SQL fragments are internal constants."""
+    playerIds = tuple(str(player['Id']) for player in players)
+    if not playerIds:
+        return {}
+    placeholders = ', '.join(['%s'] * len(playerIds))
+    columns = 'DISTINCT p.Id AS RecordPlayerId' if presenceOnly else 'r.*, p.Id AS RecordPlayerId'
+    # Use the roster's ID spelling even with case-insensitive database comparisons.
+    sqlString = (f"SELECT {columns} FROM {table} AS r "
+                 f"INNER JOIN PlayerBrief AS p ON p.Id = r.PlayerId "
+                 f"WHERE p.Id IN ({placeholders}){condition}")
+    cursor.execute(sqlString, playerIds + parameters)
+    records = {}
+    for row in cursor.fetchall():
+        records.setdefault(str(row['RecordPlayerId']), []).append(row)
+    return records
 
 # Status a session, getting back the round the session is on, and the start and end dates of the session.
 # This will be called repeatedly by polling front-end, and so switching to websockets would reduce the work
@@ -17,7 +35,7 @@ def sessionStatus():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
 
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -46,10 +64,12 @@ def sessionStatus():
         print(e)
         return jsonify({"error": str(e)}) 
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Simply provides a list of players in a session, for now useful in wait room to show all players without any need
 # for scores. 
@@ -57,7 +77,7 @@ def playersInSession():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -80,18 +100,17 @@ def playersInSession():
         if not players:
             return jsonify({"error": "Players not found"})
         
+        # Only presence matters, so duplicate dice records need not be transferred.
+        diceByPlayer = _playerRecords(cursor, players, 'DiceResult', presenceOnly=True)
+
         # Save array of all players in the session
         playerList = []
         completedOnboarding = []
         for player in players:
             # Check for players that have finished the onboarding Dice game
-            sqlString = f"SELECT * FROM DiceResult WHERE PlayerId = '{player['Id']}'"
-            cursor.execute(sqlString)
-            diceResult = cursor.fetchone()
-            didCompleteOnboarding = False
-            if diceResult:
+            didCompleteOnboarding = str(player['Id']) in diceByPlayer
+            if didCompleteOnboarding:
                 completedOnboarding.append(str(player['Id']))
-                didCompleteOnboarding = True
             # Save player information
             playerList.append({"id": player['Id'], "name": player['Name'], "color": player['Color'], "completedOnboarding": didCompleteOnboarding})
 
@@ -100,10 +119,12 @@ def playersInSession():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # applies end time to session, could be used to allow players in final results page to stop polling backend, also saves end time into 
 # database.
@@ -111,7 +132,7 @@ def endSession():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -138,17 +159,19 @@ def endSession():
             print(e)
             return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # enpoint only used once per session to skip the golf game if desired by the host
 def jumpToArmMission():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         # I have decided on using round number to determine position in the game. 
@@ -175,10 +198,12 @@ def jumpToArmMission():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Moves session to the next round, only host can call this
 # Will update the round number, and the EndDate if the last round has been played
@@ -186,7 +211,7 @@ def advanceSession():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         # I have decided on using round number to determine position in the game. 
@@ -213,17 +238,19 @@ def advanceSession():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Endpoint to get results for for a round rather than shoving results into session status
 def roundResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -240,17 +267,16 @@ def roundResults():
         if not players:
             return jsonify({"error": "Players not found"})
         
-        # Save array of all players in the session
-        # players = [
-        #     {"id": 1, "name": "Player 1", "color": "red", "shots": 50, "cost": 100, "solverOne": 0, "solverTwo": 2, "architecture": "h" },
-        # ]
+        scoresByPlayer = _playerRecords(cursor, players, 'RoundResult',
+                                       ' AND r.Round = %s ORDER BY r.Id', (str(round),))
+
+        # Save array of all players in the session, including those without a score.
         playerList = []
         for player in players:
             playerList.append({"id": player['Id'], "name": player['Name'], "color": player['Color']})
-            # For each player, also save their scores, solvers, and architecture
-            sqlString = f"SELECT * FROM RoundResult WHERE PlayerId = '{str(player['Id'])}' AND Round = '{str(round)}'"
-            cursor.execute(sqlString)
-            score = cursor.fetchone()
+            # Keep one matching result per player, as the old fetchone() did.
+            scores = scoresByPlayer.get(str(player['Id']), [])
+            score = scores[0] if scores else None
             if score:
                 playerList[-1]["shots"] = score['Shots']
                 playerList[-1]["cost"] = score['Cost']
@@ -266,17 +292,19 @@ def roundResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Get aggregate results of all tournament rounds
 def finalResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -292,14 +320,15 @@ def finalResults():
         if not players:
             return jsonify({"error": "Players not found"})
         
+        scoresByPlayer = _playerRecords(cursor, players, 'RoundResult',
+                                       ' AND r.Round > %s ORDER BY r.Id', (5,))
+
         # Save array of all players in the session
         playerList = []
         for player in players:
             playerList.append({"id": player['Id'], "name": player['Name'], "color": player['Color'], "scores": []})
             # For each player, also save their scores
-            sqlString = f"SELECT * FROM RoundResult WHERE PlayerId = '{str(player['Id'])}' AND Round > 5"
-            cursor.execute(sqlString)
-            scores = cursor.fetchall()
+            scores = scoresByPlayer.get(str(player['Id']), [])
             if scores:
                 for score in scores:
                     playerList[-1]["scores"].append({
@@ -317,10 +346,12 @@ def finalResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 
 # Endpoint to get results for for a Mechanical Arm Mission round rather than shoving results into session status
@@ -328,7 +359,7 @@ def armRoundResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -346,17 +377,16 @@ def armRoundResults():
         if not players:
             return jsonify({"error": "Players not found"})
         
-        # Save array of all players in the session
-        # players = [
-        #     {"id": 1, "name": "Player 1", "color": "red", "weight": 50, "cost": 100, "solverOne": 0, "solverTwo": 2, "architecture": "Manipulator and Grabber" },
-        # ]
+        scoresByPlayer = _playerRecords(cursor, players, 'ArmRoundResult',
+                                       ' AND r.Round = %s ORDER BY r.Id', (str(round),))
+
+        # Save array of all players in the session, including those without a score.
         playerList = []
         for player in players:
             playerList.append({"id": player['Id'], "name": player['Name'], "color": player['Color']})
             # For each player, also save their scores, solvers, and architecture
-            sqlString = f"SELECT * FROM ArmRoundResult WHERE PlayerId = '{str(player['Id'])}' AND Round = '{str(round)}'"
-            cursor.execute(sqlString)
-            score = cursor.fetchone()
+            scores = scoresByPlayer.get(str(player['Id']), [])
+            score = scores[0] if scores else None
             if score:
                 playerList[-1]["weight"] = score['Grams']
                 playerList[-1]["cost"] = score['Cost']
@@ -372,17 +402,19 @@ def armRoundResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # Get aggregate results of all mechanical arm mission rounds
 def armFinalResults():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -398,14 +430,14 @@ def armFinalResults():
         if not players:
             return jsonify({"error": "Players not found"})
         
+        scoresByPlayer = _playerRecords(cursor, players, 'ArmRoundResult', ' ORDER BY r.Id')
+
         # Save array of all players in the session
         playerList = []
         for player in players:
             playerList.append({"id": player['Id'], "name": player['Name'], "color": player['Color'], "scores": []})
             # For each player, also save their scores
-            sqlString = f"SELECT * FROM ArmRoundResult WHERE PlayerId = '{str(player['Id'])}'"
-            cursor.execute(sqlString)
-            scores = cursor.fetchall()
+            scores = scoresByPlayer.get(str(player['Id']), [])
             if scores:
                 for score in scores:
                     playerList[-1]["scores"].append({
@@ -424,17 +456,19 @@ def armFinalResults():
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()
     
 # get quantity of players that have finished the survey and quantity that are in the session
 def surveysSubmitted():
     try:
         db = None
         cursor = None
-        db = pymysql.connections.Connection(host=VT_MYSQL_HOST, user=VT_MYSQL_USER, password=VT_MYSQL_PASSWORD, database=VT_MYSQL_STSELAB_DB, port=VT_MYSQL_PORT)
+        db = get_game_connection()
         
         # First check that required data is in request, must have valid sessionId
         data = request.json
@@ -451,22 +485,18 @@ def surveysSubmitted():
             return jsonify({"error": "Players not found"})
         
         totalPlayers = len(players)
-        surveysSubmitted = 0
-
-        # count surveys submitted
-        for player in players:
-            sqlString = f"SELECT * FROM FreeRoamSurvey WHERE PlayerId = '{player['Id']}'"
-            cursor.execute(sqlString)
-            completedSurvey = cursor.fetchone()
-            if completedSurvey:
-                surveysSubmitted += 1
+        submittedByPlayer = _playerRecords(cursor, players, 'FreeRoamSurvey',
+                                          presenceOnly=True)
+        surveysSubmitted = len(submittedByPlayer)
 
         return jsonify({"success": True, "totalPlayers": totalPlayers, "surveysSubmitted": surveysSubmitted})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)})
     finally:
-        if (cursor != None):
-            cursor.close()
-        if (db != None):
-            db.close()
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            if db is not None:
+                db.close()

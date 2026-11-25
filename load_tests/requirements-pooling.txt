@@ -1,0 +1,4 @@
+# Optional dependencies for testing the application's real connection pool.
+-r requirements.txt
+SQLAlchemy==2.0.58
+PyMySQL==1.2.4
