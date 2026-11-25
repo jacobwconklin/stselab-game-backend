@@ -1,7 +1,6 @@
 # Contains endpoints for user actions
 
 import json
-import pyodbc 
 import random
 import uuid
 from dotenv import load_dotenv

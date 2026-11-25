@@ -1,7 +1,6 @@
 # Contains endpoints for session actions
 
 from datetime import datetime
-import pyodbc 
 from dotenv import load_dotenv
 load_dotenv()
 from flask import (request, jsonify)
